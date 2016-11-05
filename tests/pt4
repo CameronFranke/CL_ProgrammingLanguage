@@ -1,0 +1,5 @@
+def int pt4()
+{
+	int x := 5
+	char[3] := ["c", "a", "m"]
+}

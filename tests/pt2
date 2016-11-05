@@ -1,0 +1,4 @@
+def int pt2()
+{
+int some3Num[1] := [1]
+}

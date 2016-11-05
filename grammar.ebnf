@@ -1,0 +1,31 @@
+alpha = /[a-zA-Z]/;
+alphanumeric = /[a-zA-Z0-9]/;
+numeric = /[0-9]+/;
+word = /[a-zA-z][a-zA-Z0-9]*/;
+operator = "+" | "-" | "*" | "/" | ":=" | "==" | "!=";
+
+
+var_name = word ["[" value "]"]; 
+literal = (numeric ["." numeric]) | ('"' alpha '"') | "True" | "False" | "[" value {"," value} "]";
+type_keyword = "int" | "char" | "bool" | "float";
+type_declaration = type_keyword var_name ":=" value /$/;
+expression = "(" value operator value ")";
+value = literal | var_name | expression;
+assignment = var_name ":=" value;
+
+
+function_definition = "def" type_keyword var_name "("  ")" [/$/] block;
+function_call = var_name "(" [value {"," value}] ")";
+
+
+condition_statement = "if" value block ["else" block];
+loop_statement = "do" block "while" block;
+control_statement = condition_statement | loop_statement;
+
+
+line = type_declaration | expression | assignment | function_call; 
+block = "{" /$/  { line | control_statement } [/$/] "}";
+program = "@@@" {/$/} {function_definition | line | control_statement} {/$/} "@@@";
+
+comment = "#" {/./} /$/;
+

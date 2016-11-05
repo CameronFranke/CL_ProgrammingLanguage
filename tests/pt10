@@ -1,0 +1,13 @@
+char name[7] := ["C", "A", "M", "E", "R", "O", "N"]
+
+def int main(){
+	int x := 4
+	int y := 8
+	int z := 9
+	return(((x + y) &
+   + 9))
+}
+def int f(){
+        char grade := "a"
+        return(grade)
+}
