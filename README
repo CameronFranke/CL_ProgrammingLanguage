@@ -1,4 +1,17 @@
 This repository contains the all of the tools and information associated with 
 Cameron's Programming Language.
 
+The grammar.ebnf contains the grammar for the language in a modified ebnf format. 
+The format is a combination of python regex and the specific syntax required by the 
+Grako package. 
 
+The tests folder contain a variety of testcases:
+	st = scanner test
+	pt = parser test 
+
+clparser.py is the parser projuced by grako. It can be recompiled with the following: 
+
+	"python -m grako --outfile clparser.py grammar.ebnf"
+
+The test driver loads the specified tests, preprocesses them in accordance with 
+standard CL practices and feed the text to the parser. 
