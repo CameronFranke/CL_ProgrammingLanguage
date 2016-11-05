@@ -14,7 +14,7 @@ value = literal | var_name | expression;
 assignment = var_name ":=" value;
 
 
-function_definition = "def" type_keyword var_name "("  ")" [/$/] block;
+function_definition = "def" type_keyword var_name "(" [ type_keyword var_name {"," type_keyword var_name } ] ")" [/$/] block;
 function_call = var_name "(" [value {"," value}] ")";
 
 

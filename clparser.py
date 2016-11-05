@@ -214,6 +214,15 @@ class UnknownParser(Parser):
         self._type_keyword_()
         self._var_name_()
         self._token('(')
+        with self._optional():
+            self._type_keyword_()
+            self._var_name_()
+
+            def block0():
+                self._token(',')
+                self._type_keyword_()
+                self._var_name_()
+            self._closure(block0)
         self._token(')')
         with self._optional():
             self._pattern(r'$')
