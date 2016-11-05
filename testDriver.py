@@ -1,7 +1,7 @@
 import clparser
 import json
 
-testFiles = [1,2,3,4,5,6,7,8,9,10]
+testFiles = [1,2,3,4,5,6,7,8,9,10,11]
 
 
 parser = clparser.UnknownParser()
@@ -36,3 +36,5 @@ for x in testFiles:
 		ast = parser.parse(test, rule_name='program')
 		print(ast)
 		print(json.dumps(ast, indent=2)) # ASTs are JSON-friendy
+		with open("ast.json", "w+") as outfile:
+			json.dump(ast, outfile, indent=4)

@@ -2,7 +2,7 @@ alpha = /[a-zA-Z]/;
 alphanumeric = /[a-zA-Z0-9]/;
 numeric = /[0-9]+/;
 word = /[a-zA-z][a-zA-Z0-9]*/;
-operator = "+" | "-" | "*" | "/" | ":=" | "==" | "!=";
+operator = "+" | "-" | "*" | "/" | ":=" | "==" | "!=" | ">" | "<" | ">=" | "<=";
 
 
 var_name = word ["[" value "]"]; 

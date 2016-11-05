@@ -115,7 +115,15 @@ class UnknownParser(Parser):
                 self._token('==')
             with self._option():
                 self._token('!=')
-            self._error('expecting one of: != * + - / := ==')
+            with self._option():
+                self._token('>')
+            with self._option():
+                self._token('<')
+            with self._option():
+                self._token('>=')
+            with self._option():
+                self._token('<=')
+            self._error('expecting one of: != * + - / := < <= == > >=')
 
     @graken()
     def _var_name_(self):
