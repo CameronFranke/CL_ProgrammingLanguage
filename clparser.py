@@ -332,7 +332,8 @@ class UnknownParser(Parser):
 
 class UnknownSemantics(object):
     def alpha(self, ast):
-        return ast
+	#d = {'type': "alpha", 'value': ast}
+	return ast
 
     def alphanumeric(self, ast):
         return ast
@@ -344,52 +345,53 @@ class UnknownSemantics(object):
         return ast
 
     def operator(self, ast):
-        return ast
+	d = {'type': "operator", 'value': ast}
+	return d
 
     def var_name(self, ast):
-        return ast
+	return {'type': "var_name", 'value': ast}
 
     def literal(self, ast):
-        return ast
+	return {"type": "literal", "value": ast}
 
     def type_keyword(self, ast):
-        return ast
+	return {"type": "type_keyword", "value": ast}
 
     def type_declaration(self, ast):
-        return ast
+	return {"type": "type_declaration", "value": ast}
 
     def expression(self, ast):
-        return ast
+	return {"type": "expression", "value": ast}
 
     def value(self, ast):
-        return ast
+	return {"type": "value", "value": ast}
 
     def assignment(self, ast):
-        return ast
+	return {"type": "assignment", "value": ast}
 
     def function_definition(self, ast):
-        return ast
+	return {"type": "function_definition", "value": ast}
 
     def function_call(self, ast):
-        return ast
+	return {"type": "function_call", "value": ast}
 
     def condition_statement(self, ast):
-        return ast
+	return {"type": "condition_statement", "value": ast}
 
     def loop_statement(self, ast):
-        return ast
+	return {"type": "loop_statement", "value": ast}
 
     def control_statement(self, ast):
-        return ast
+	return ast
 
     def line(self, ast):
         return ast
 
     def block(self, ast):
-        return ast
+	return {'type': "block", 'value': ast}
 
     def program(self, ast):
-        return ast
+	return {"type": "program", "value": ast}
 
     def comment(self, ast):
         return ast
@@ -398,7 +400,7 @@ class UnknownSemantics(object):
 def main(filename, startrule, **kwargs):
     with open(filename) as f:
         text = f.read()
-    parser = UnknownParser(parseinfo=False)
+    parser = UnknownParser(parseinfo=True)
     return parser.parse(text, startrule, filename=filename, **kwargs)
 
 if __name__ == '__main__':
