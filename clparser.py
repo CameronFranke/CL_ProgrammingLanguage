@@ -267,19 +267,6 @@ class UnknownParser(Parser):
             self._error('no available options')
 
     @graken()
-    def _line_(self):
-        with self._choice():
-            with self._option():
-                self._type_declaration_()
-            with self._option():
-                self._expression_()
-            with self._option():
-                self._assignment_()
-            with self._option():
-                self._function_call_()
-            self._error('no available options')
-
-    @graken()
     def _block_(self):
         self._token('{')
         self._pattern(r'$')
@@ -287,7 +274,13 @@ class UnknownParser(Parser):
         def block0():
             with self._choice():
                 with self._option():
-                    self._line_()
+                    self._type_declaration_()
+                with self._option():
+                    self._expression_()
+                with self._option():
+                    self._assignment_()
+                with self._option():
+                    self._function_call_()
                 with self._option():
                     self._control_statement_()
                 self._error('no available options')
@@ -309,7 +302,13 @@ class UnknownParser(Parser):
                 with self._option():
                     self._function_definition_()
                 with self._option():
-                    self._line_()
+                    self._type_declaration_()
+                with self._option():
+                    self._expression_()
+                with self._option():
+                    self._assignment_()
+                with self._option():
+                    self._function_call_()
                 with self._option():
                     self._control_statement_()
                 self._error('no available options')
@@ -332,8 +331,7 @@ class UnknownParser(Parser):
 
 class UnknownSemantics(object):
     def alpha(self, ast):
-	#d = {'type': "alpha", 'value': ast}
-	return ast
+        return ast
 
     def alphanumeric(self, ast):
         return ast
@@ -345,53 +343,49 @@ class UnknownSemantics(object):
         return ast
 
     def operator(self, ast):
-	d = {'type': "operator", 'value': ast}
-	return d
+        return ast
 
     def var_name(self, ast):
-	return {'type': "var_name", 'value': ast}
+        return ast
 
     def literal(self, ast):
-	return {"type": "literal", "value": ast}
+        return ast
 
     def type_keyword(self, ast):
-	return {"type": "type_keyword", "value": ast}
+        return ast
 
     def type_declaration(self, ast):
-	return {"type": "type_declaration", "value": ast}
+        return ast
 
     def expression(self, ast):
-	return {"type": "expression", "value": ast}
+        return ast
 
     def value(self, ast):
-	return {"type": "value", "value": ast}
+        return ast
 
     def assignment(self, ast):
-	return {"type": "assignment", "value": ast}
+        return ast
 
     def function_definition(self, ast):
-	return {"type": "function_definition", "value": ast}
+        return ast
 
     def function_call(self, ast):
-	return {"type": "function_call", "value": ast}
+        return ast
 
     def condition_statement(self, ast):
-	return {"type": "condition_statement", "value": ast}
+        return ast
 
     def loop_statement(self, ast):
-	return {"type": "loop_statement", "value": ast}
+        return ast
 
     def control_statement(self, ast):
-	return ast
-
-    def line(self, ast):
         return ast
 
     def block(self, ast):
-	return {'type': "block", 'value': ast}
+        return ast
 
     def program(self, ast):
-	return {"type": "program", "value": ast}
+        return ast
 
     def comment(self, ast):
         return ast
@@ -400,7 +394,7 @@ class UnknownSemantics(object):
 def main(filename, startrule, **kwargs):
     with open(filename) as f:
         text = f.read()
-    parser = UnknownParser(parseinfo=True)
+    parser = UnknownParser(parseinfo=False)
     return parser.parse(text, startrule, filename=filename, **kwargs)
 
 if __name__ == '__main__':

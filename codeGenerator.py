@@ -50,10 +50,3 @@ class codeGenerator():
 			print()
 
 
-
-
-
-
-
-
-x = codeGenerator("tests/cgt1")

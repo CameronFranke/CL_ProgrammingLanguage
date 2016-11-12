@@ -23,9 +23,8 @@ loop_statement = "do" block "while" block;
 control_statement = condition_statement | loop_statement;
 
 
-line = type_declaration | expression | assignment | function_call; 
-block = "{" /$/  { line | control_statement } [/$/] "}";
-program = "@@@" {/$/} {function_definition | line | control_statement} {/$/} "@@@";
+block = "{" /$/  { type_declaration | expression | assignment | function_call | control_statement } [/$/] "}";
+program = "@@@" {/$/} {function_definition | type_declaration | expression | assignment | function_call | control_statement} {/$/} "@@@";
 
 comment = "#" {/./} /$/;
 
