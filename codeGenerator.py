@@ -1,4 +1,4 @@
-
+import grako
 import json
 import clparser
 import clparsersemantics 
@@ -15,6 +15,9 @@ class codeGenerator():
 		self.printTree = True 
 		self.printParseTree()
 		
+		self.test_types_to_declare = []
+
+
 
 	def preprocessing(self):
                 temp = []
@@ -24,7 +27,7 @@ class codeGenerator():
                                 skip = False
                                 continue
                         if "&" in line:
-                                tempStr = line.replace("&", test[i+1].replace("\n", ""))
+                                tempStr = line.replace("&", self.sourceText[i+1].replace("\n", ""))
                                 skip = True
                                 temp.append(tempStr)
                         else:
@@ -47,6 +50,72 @@ class codeGenerator():
 		if self.printTree: 
 			print("\n================== Syntax Tree  ==================")
                 	print(json.dumps(self.parseTree, indent=2)) # ASTs are JSON-friendy
-			print()
+			print("==================================================")
+
+	
+	def traverseParseTree(self, parseTree):
+		
+		print "\n" + str(type(parseTree)) + ":" + str(parseTree) + "\n"
+
+		if type(parseTree) == dict:
+			if not parseTree:
+				return 
+
+			if parseTree["type"] == "program":
+				for item in parseTree["value"]:
+					self.traverseParseTree(item)	
+			
+			if parseTree["type"] == "type_declaration": 
+				self.declare_type(parseTree)
+
+
+		elif type(parseTree) == grako.contexts.Closure:
+			for x in parseTree:
+				self.traverseParseTree(x)		
+	
+		# return on unhandled object
+		return 	
+	
+	def declare_type(self, parseTree):
+		if parseTree["type"] == "type_declaration": 
+			print("---Placeholder for type declaration code---")
+		else: 
+			print("!!! -- ERROR -- !!!")
+			return 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

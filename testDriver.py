@@ -6,3 +6,4 @@ testFiles = [1]
 for x in testFiles:
 	filename = "tests/cgt" + str(x).replace("\n", "")
 	myCodeGen = codeGenerator.codeGenerator(filename)
+	myCodeGen.traverseParseTree(myCodeGen.parseTree)

@@ -14,4 +14,23 @@ clparser.py is the parser projuced by grako. It can be recompiled with the follo
 	"python -m grako --outfile clparser.py grammar.ebnf"
 
 The test driver loads the specified tests, preprocesses them in accordance with 
-standard CL practices and feed the text to the parser. 
+standard CL practices and feed the text to the parser.
+
+
+
+------------------  x86  ----------------
+compiling with nasm:
+	nasm -f elf64 -o <outfile> <infile>
+
+	-f: format = elf64 (64 bit)
+	-o: output = name of output file
+
+<outfile>.o will be produced, this is an object file and cannot be executed
+To convert it to an executable we will link with with the GNU linker: 
+
+	ld <infile> -o <program name>
+
+	infile = .o from nasm
+	program name = name of the executable 
+
+Run executable with "./<program name>"   
