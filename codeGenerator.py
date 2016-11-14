@@ -17,7 +17,10 @@ class codeGenerator():
 		
 		self.test_types_to_declare = []
 
-
+		self.xSourceFile = "x86_tests/clTest.asm"
+		self.xData = []
+		self.xText = []
+		self.xStart = []
 
 	def preprocessing(self):
                 temp = []
@@ -48,7 +51,7 @@ class codeGenerator():
 
 	def printParseTree(self): 
 		if self.printTree: 
-			print("\n================== Syntax Tree  ==================")
+			print("\n================== Syntax Tree ==================")
                 	print(json.dumps(self.parseTree, indent=2)) # ASTs are JSON-friendy
 			print("==================================================")
 
@@ -78,10 +81,60 @@ class codeGenerator():
 	
 	def declare_type(self, parseTree):
 		if parseTree["type"] == "type_declaration": 
-			print("---Placeholder for type declaration code---")
+			
+			myType = ""
+			myName = ""
+			myLiteral = ""
+
+			decTree = parseTree["value"]
+			for token in decTree:
+				if type(token) == dict:
+					if token["type"] == "type_keyword":
+						myType = token["value"]
+					
+					if token["type"] == "var_name":
+						myName = token["value"]
+					
+					if token["type"] == "value":
+						myLiteral = self.build_literal(token["value"])
+		
+			#print myType
+			#print myName
+			#print myLiteral
+			self.xData.append(myName + " db " + myLiteral)
+		
 		else: 
-			print("!!! -- ERROR -- !!!")
+			print("!!! -- ERROR -- !!! - declare_type")
 			return 
+	
+
+	def build_literal(self, tree):
+		if type(tree) == dict:
+			if tree["type"] == "literal":
+				return tree["value"]
+
+
+	
+	def write_x86_source(self):
+		with open(self.xSourceFile, "w+") as s:
+		
+			if len(self.xData) > 0:
+				s.write("section .data\n")
+				for x in self.xData:
+					s.write("\t" + str(x) + "\n")	
+
+			s.write("section .data\n")
+			s.write("\tglobal _start\n")
+			for x in self.xText:
+				s.write("\t" + str(x) + "\n")
+
+			s.write("_start:\n")
+			for x in self.xStart:
+				s.write("\t" + str(x) + "\n")
+			
+			s.write("\tmov rax, 60\n")
+			s.write("\tmov rdi, 0\n")
+			s.write("\tsyscall\n")
 
 
 
