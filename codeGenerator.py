@@ -17,10 +17,18 @@ class codeGenerator():
 		
 		self.test_types_to_declare = []
 
+		self.availableFunctions = ["print"]
+		self.loadedFunctions = [] 
 		self.xSourceFile = "x86_tests/clTest.asm"
-		self.xData = []
-		self.xText = []
-		self.xStart = []
+		self.xData = ["section .data\n"]
+		self.xBss = ["section .bss\n"]
+		self.xText = ["\nsection .text\n", "\tglobal _start\n"]
+		self.xStart = ["\n_start:\n"]
+
+		
+		self.blockId = ["g"]
+		self.blockCount = 1
+		
 
 	def preprocessing(self):
                 temp = []
@@ -70,7 +78,11 @@ class codeGenerator():
 			
 			if parseTree["type"] == "type_declaration": 
 				self.declare_type(parseTree)
-
+			
+			if parseTree["type"] == "block":
+				self.blockId.append(self.genBlockId())
+				for item in parseTree["value"]:
+					self.traverseParseTree(item)
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
@@ -96,49 +108,87 @@ class codeGenerator():
 						myName = token["value"]
 					
 					if token["type"] == "value":
-						myLiteral = self.build_literal(token["value"])
-		
-			#print myType
-			#print myName
-			#print myLiteral
-			self.xData.append(myName + " db " + myLiteral)
-		
+						myLiteral = token["value"]["value"]
+
+			myLiteral = self.clean_literal(myLiteral, myType)			
+
+			##
+			##	ASSEMBLY VARIABLE FORMAT
+			##	<scope id>_<type>_<name>
+			##	<scope id>_<value>_<name>
+
+
+			if myType == "int":
+				myName_val = self.blockId[-1] + "_val_" + myName 
+				myName_type = self.blockId[-1] + "_type_" + myName
+				
+				self.xBss.append("\t" + myName_val + ":\t resq 1\n")
+				self.xBss.append("\t" + myName_type + ":\t resb 1\n")
+
+				self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
+				self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
+			
+			if myType == "char":
+				myName_val = self.blockId[-1] + "_val_" + myName 
+				myName_type = self.blockId[-1] + "_type_" + myName
+
+				self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
+				self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
+				
+				self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
+				self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
+
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
 			return 
 	
 
-	def build_literal(self, tree):
-		if type(tree) == dict:
-			if tree["type"] == "literal":
-				return tree["value"]
-
+	def clean_literal(self, tree, myType):
+		if myType == "int":
+			return tree
+		if myType == "char":
+			return tree[0] + tree[1] + tree[2]
 
 	
 	def write_x86_source(self):
 		with open(self.xSourceFile, "w+") as s:
-		
-			if len(self.xData) > 0:
-				s.write("section .data\n")
+			if len(self.xData) > 1:
 				for x in self.xData:
-					s.write("\t" + str(x) + "\n")	
+					s.write(str(x))	
 
-			s.write("section .data\n")
-			s.write("\tglobal _start\n")
+			if len(self.xBss) > 1:
+				for x in self.xBss:
+					s.write(str(x))
+
 			for x in self.xText:
-				s.write("\t" + str(x) + "\n")
+                            	s.write(str(x))	
 
-			s.write("_start:\n")
+
 			for x in self.xStart:
-				s.write("\t" + str(x) + "\n")
+				s.write(str(x))
 			
+			# load and execute 'sys_exit'
 			s.write("\tmov rax, 60\n")
 			s.write("\tmov rdi, 0\n")
 			s.write("\tsyscall\n")
 
 
 
+	def genBlockId(self):
+		temp = self.blockCount
+		effectiveAlphabet = ["a", "b", "c", "d", "e", "f", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+		idStr = ""
 
+		# using len in case other letters need to me removed becase they are reserved, g is removed
+		# because it is the label for the global scope 
+
+		if temp / len(effectiveAlphabet) > 0:
+			idStr.append(effectiveAlphabet[temp / len(effectiveAlphabet)])
+			temp = temp % len(effectiveAlphbet)
+
+		idStr.append(effectiveAlphabet[temp])
+		self.blockCount+=1
+		return temp
 
 
 
