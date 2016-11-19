@@ -1,28 +1,45 @@
+section .data
+        var db 0,0 
+
 section .bss
-	g_val_myChar:	 resb 1
-	g_type_myChar:	 resb 1
 	typeBuffer resb 8
         digitBuffer resb 100
         digitSpacePos resb 8
 
+        g_val_x:         resq 1
+        g_type_x:        resb 1
+        g_val_y:    resb 1
+        g_type_y:   resb 1
+
+
 
 section .text
-	global _start
+        global _start
 
 _start:
-	mov byte [g_val_myChar], "x"
-	mov byte [g_type_myChar], "c"
-        mov r9, [g_val_myChar]		;mov value to reg
+
+        mov word [g_val_x], 598
+        mov byte [g_type_x], "i"
+        mov byte [g_val_y], "x"
+        mov byte [g_type_y], "c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+        mov r9, [g_val_x] 			;mov value to reg
 	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_myChar]		;mov type to reg
+	mov r9b, [g_type_x]		;mov type to reg
 	mov byte [typeBuffer], r9b		;mov reg to type buffer
-	jmp _testForInt
 
-
-_exit:
-	mov rax, 60
-	mov rdi, 0
-	syscall
 _testForInt:
         mov r9b, "i"
         cmp byte [typeBuffer], r9b 
@@ -35,6 +52,12 @@ _testForChar:
         cmp byte [typeBuffer], r9b
         jne _exit
         call _printChar
+
+_exit:
+
+        mov rax, 60
+        mov rdi, 0
+        syscall
 
 _printChar:
         mov rax, 1

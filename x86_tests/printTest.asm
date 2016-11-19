@@ -30,15 +30,18 @@ _start:
 	mov word [x+2], 9876
 
 
-	mov r9, [x]
-	mov [printBuffer], r9
-	call _printChar
+	;mov byte r9, [g_type_x]
+	;mov printBuffer, "X";mov [printBuffer], r9
+	;call _printChar
 	
 	mov rax, [x+1]
 	call _printNum 
 
 	mov r9, [g_val_myChar]
 	mov [printBuffer], r9
+	call _printChar
+
+	
 	;mov [digitSpace], r9
 	;mov rax, [g_val_x]
 

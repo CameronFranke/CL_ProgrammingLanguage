@@ -1,0 +1,4 @@
+int x := 5
+char myChar := "x"
+print(x)
+print(myChar)

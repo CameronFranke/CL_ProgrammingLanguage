@@ -18,14 +18,24 @@ class codeGenerator():
 		self.test_types_to_declare = []
 
 		self.availableFunctions = ["print"]
-		self.loadedFunctions = [] 
+		self.loadedFunctions = []
+		##	When loading in functions from std lib check for availability and for load status.
+		##	The _start section will contain the code the is needed when the funciton is to be called,
+		## 	the rest of the labels and data reservations should be copied exactly into the source file.
+		##	Be careful when reading/copying sections from stdLib because the order of the labels may be 
+		## 	important (within each function's source template). Therefore it should always be assumed that it is. 
+
+
 		self.xSourceFile = "x86_tests/clTest.asm"
 		self.xData = ["section .data\n"]
 		self.xBss = ["section .bss\n"]
 		self.xText = ["\nsection .text\n", "\tglobal _start\n"]
 		self.xStart = ["\n_start:\n"]
 
+		self.functionCode = ["_exit:\n\tmov rax, 60\n\tmov rdi, 0\n\tsyscall\n"]
+		self.functionTriggers = {} #dict {funcname => list of trigger lines}
 		
+
 		self.blockId = ["g"]
 		self.blockCount = 1
 		
@@ -83,6 +93,10 @@ class codeGenerator():
 				self.blockId.append(self.genBlockId())
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
+
+			if parseTree["type"] == "function_call":###########################################################
+				print("PLACEHOLDER FOR FUNCTION CALL HANDLING")
+				self.call_function(parseTree["value"])
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
@@ -149,7 +163,30 @@ class codeGenerator():
 		if myType == "char":
 			return tree[0] + tree[1] + tree[2]
 
-	
+	def call_function(self, tree):
+		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
+		fName = tree[0]["value"]
+		argName = tree[2]["value"]["value"]
+
+		print(fName, argName)
+
+		if fName in self.availableFunctions:
+			if fName not in self.loadedFunctions:
+				self.load_function_from_lib(fName)
+				self.loadedFunctions.append(fName)
+
+			if fName in self.loadedFunctions:
+				myTrigger = str(self.functionTriggers[fName])
+				myTrigger = myTrigger.replace("<INSERT_VALUE>", self.blockId[-1] + "_val_" + argName)
+				myTrigger = myTrigger.replace("<INSERT_TYPE>", self.blockId[-1] + "_type_" + argName)
+				myTrigger = myTrigger.split("\n")
+				for line in myTrigger:
+					print line
+					self.xStart.append(line + "\n")
+
+		else:
+			raise "ATTEMPING TO CALL A NON EXISTANT FUNCTION"
+
 	def write_x86_source(self):
 		with open(self.xSourceFile, "w+") as s:
 			if len(self.xData) > 1:
@@ -167,11 +204,9 @@ class codeGenerator():
 			for x in self.xStart:
 				s.write(str(x))
 			
-			# load and execute 'sys_exit'
-			s.write("\tmov rax, 60\n")
-			s.write("\tmov rdi, 0\n")
-			s.write("\tsyscall\n")
 
+			for section in self.functionCode:
+				s.write(section)
 
 
 	def genBlockId(self):
@@ -191,7 +226,49 @@ class codeGenerator():
 		return temp
 
 
+	def load_function_from_lib(self, fName):
+		try:
+			with open("standardLib/" + fName + ".asm") as f:
+				primaryFlag = False
+				primaryCode = []
+				index = 0
+				func = f.readlines()
+				for i, line in enumerate(func):
+					if "section .bss" in line:
+						bssTemp = []
+						for x in range((i+1), len(func)):
+							if "section" in func[x]: break
+							else: bssTemp.append(func[x])
 
+					if "section .text" in line:
+						continue ## should be fine, nothing should be in .text
+				
+					if "_start:" in line:
+						startTemp = ""
+						for x in range((i+1), len(func)):
+                                                	if "_" in func[x] and ":" in func[x]:
+								primaryFlag = True 
+								index = x-1
+								break  ## catch new section 
+                                                	else: startTemp += func[x]
+				
+					if primaryFlag and i > index:
+						primaryCode.append(line)
+
+			#print ("bss: " + str(bssTemp))
+			self.xBss.extend(bssTemp)	
+			#print ("start: " + str(startTemp))
+			self.functionTriggers[fName] = startTemp
+			print ("code: ")
+			for x in primaryCode: print(x)
+			self.functionCode.extend(primaryCode)
+
+		except Exception as e:
+			print(" === ERROR READING LIBRARY FINCTION ===")
+			print(e)
+			return 
+
+		# Need to strip empty lines at the end of this function 
 
 
 
