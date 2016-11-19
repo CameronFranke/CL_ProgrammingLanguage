@@ -16,27 +16,30 @@ _start:
 	mov [digitBuffer], r9			;mov reg to value buffer
 	mov r9b, [g_type_myChar]		;mov type to reg
 	mov byte [typeBuffer], r9b		;mov reg to type buffer
-	jmp _testForInt
+	call _print
 
 
 _exit:
 	mov rax, 60
 	mov rdi, 0
 	syscall
-_testForInt:
+_print:
+._testForInt:
         mov r9b, "i"
         cmp byte [typeBuffer], r9b 
-        jne _testForChar
+        jne ._testForChar
         mov rax, [digitBuffer]
-	call _printNum
+	call ._printNum
+	ret
 
-_testForChar:
+._testForChar:
 	mov r9b, "c"
         cmp byte [typeBuffer], r9b
         jne _exit
-        call _printChar
+        call ._printChar
+	ret
 
-_printChar:
+._printChar:
         mov rax, 1
         mov rdi, 1
         mov rsi, digitBuffer
@@ -44,14 +47,14 @@ _printChar:
         syscall
 	ret
 
-_printNum:
+._printNum:
         mov rcx, digitBuffer
         mov rbx, 10
         mov [rcx], rbx 
         inc rcx 
         mov [digitSpacePos], rcx 
 
-_printNumLoop:
+._printNumLoop:
         mov rdx, 0
         mov rbx, 10
 	div rbx
@@ -65,9 +68,9 @@ _printNumLoop:
 
         pop rax
         cmp rax, 0
-        jne _printNumLoop
+        jne ._printNumLoop
 
-_printNumLoop2:
+._printNumLoop2:
         mov rcx, [digitSpacePos]
 
         mov rax, 1
@@ -81,7 +84,7 @@ _printNumLoop2:
         mov [digitSpacePos], rcx
 
         cmp rcx, digitBuffer
-        jge _printNumLoop2
+        jge ._printNumLoop2
 
         ret
 
