@@ -1,0 +1,20 @@
+char a := "H"
+char b := "e"
+char c := "l"
+char d := "l"
+char e := "o"
+char g := "w"
+char h := "o"
+char i := "r"
+char j := "l"
+char k := "d"
+print(a)
+print(b)
+print(c)
+print(d)
+print(e)
+print(g)
+print(h)
+print(i)
+print(j)
+print(k)
