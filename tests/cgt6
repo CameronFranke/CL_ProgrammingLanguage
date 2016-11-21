@@ -1,4 +1,4 @@
-int x := 5
-char myChar := "x"
+char x := "C"
+char y := "\n"
 print(x)
-print(myChar)
+print(y)

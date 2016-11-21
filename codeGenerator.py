@@ -11,7 +11,7 @@ class codeGenerator():
 		self.printSourceText = True 
 		self.preprocessing()
 
-		self.parser = clparser.UnknownParser(parseinfo=True)
+		self.parser = clparser.UnknownParser(parseinfo=True, whitespace='')
 		self.parseTree = self.parser.parse(self.sourceText, rule_name='program', semantics=clparsersemantics.UnknownSemantics())
 		self.printTree = True 
 		self.printParseTree()
@@ -162,7 +162,7 @@ class codeGenerator():
 		if myType == "int":
 			return tree
 		if myType == "char":
-			return tree[0] + tree[1] + tree[2]
+			return """`""" + tree[1] + """`"""
 
 	def call_function(self, tree):
 		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
@@ -282,8 +282,6 @@ class codeGenerator():
 		p.sendline("ld test.o -o " + outfile)
 		x = p.expect(":~")
 		y = p.before
-		print x 
-		print y
 
 
 

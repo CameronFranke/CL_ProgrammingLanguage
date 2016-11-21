@@ -137,7 +137,25 @@ class UnknownParser(Parser):
                     self._token('.')
                 with self._option():
                     self._token("'")
-                self._error("expecting one of: ! ' . ?")
+                with self._option():
+                    self._token(' ')
+                with self._option():
+                    self._token('\\n')
+                with self._option():
+                    self._token('$')
+                self._error("expecting one of:   ! $ ' . ? \\n")
+
+    @graken()
+    def _W_(self):
+
+        def block0():
+            with self._choice():
+                with self._option():
+                    self._token('\t')
+                with self._option():
+                    self._token(' ')
+                self._error('expecting one of: \t  ')
+        self._closure(block0)
 
     @graken()
     def _var_name_(self):
@@ -175,10 +193,9 @@ class UnknownParser(Parser):
                 self._closure(block0)
                 self._token(']')
             with self._option():
-                with self._group():
-                    self._token('"')
-                    self._ascii_()
-                    self._token('"')
+                self._token('"')
+                self._ascii_()
+                self._token('"')
             self._error('expecting one of: False True')
 
     @graken()
@@ -196,11 +213,16 @@ class UnknownParser(Parser):
 
     @graken()
     def _type_declaration_(self):
+        self._W_()
         self._type_keyword_()
+        self._W_()
         self._var_name_()
+        self._W_()
         self._token(':=')
+        self._W_()
         self._value_()
-        self._pattern(r'$')
+        self._W_()
+        self._token('\n')
 
     @graken()
     def _expression_(self):
@@ -229,36 +251,56 @@ class UnknownParser(Parser):
 
     @graken()
     def _function_definition_(self):
-        self._token('def')
+        self._W_()
+        self._token('def ')
         self._type_keyword_()
+        self._W_()
         self._var_name_()
+        self._W_()
         self._token('(')
+        self._W_()
         with self._optional():
             self._type_keyword_()
+            self._W_()
             self._var_name_()
+            self._W_()
 
             def block0():
                 self._token(',')
+                self._W_()
                 self._type_keyword_()
+                self._W_()
                 self._var_name_()
+                self._W_()
             self._closure(block0)
+        self._W_()
         self._token(')')
+        self._W_()
         with self._optional():
-            self._pattern(r'$')
+            self._token('\n')
         self._block_()
 
     @graken()
     def _function_call_(self):
+        self._W_()
         self._var_name_()
+        self._W_()
         self._token('(')
+        self._W_()
         with self._optional():
             self._value_()
+            self._W_()
 
             def block0():
+                self._W_()
                 self._token(',')
+                self._W_()
                 self._value_()
             self._closure(block0)
+        self._W_()
         self._token(')')
+        self._W_()
+        self._token('\n')
 
     @graken()
     def _condition_statement_(self):
@@ -365,6 +407,9 @@ class UnknownSemantics(object):
         return ast
 
     def ascii(self, ast):
+        return ast
+
+    def W(self, ast):
         return ast
 
     def var_name(self, ast):

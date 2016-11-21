@@ -24,3 +24,5 @@ print(j)
 print(k)
 print(l)
 print(m)
+int numbersNstuff := 241
+print(numbersNstuff)

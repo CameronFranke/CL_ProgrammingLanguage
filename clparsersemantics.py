@@ -25,6 +25,8 @@ class UnknownSemantics(object):
         return {"type": "type_keyword", "value": ast}
 
     def type_declaration(self, ast):
+	while [] in ast:
+	    ast.remove([])
         return {"type": "type_declaration", "value": ast}
 
     def expression(self, ast):
@@ -40,6 +42,8 @@ class UnknownSemantics(object):
         return {"type": "function_definition", "value": ast}
 
     def function_call(self, ast):
+	while [] in ast:
+		ast.remove([])
         return {"type": "function_call", "value": ast}
 
     def condition_statement(self, ast):
@@ -59,3 +63,6 @@ class UnknownSemantics(object):
 
     def comment(self, ast):
         return ast
+
+    def W(self, ast):
+	return ast
