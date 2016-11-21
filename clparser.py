@@ -126,6 +126,20 @@ class UnknownParser(Parser):
             self._error('expecting one of: != * + - / := < <= == > >=')
 
     @graken()
+    def _ascii_(self):
+        with self._optional():
+            with self._choice():
+                with self._option():
+                    self._token('?')
+                with self._option():
+                    self._token('!')
+                with self._option():
+                    self._token('.')
+                with self._option():
+                    self._token("'")
+                self._error("expecting one of: ! ' . ?")
+
+    @graken()
     def _var_name_(self):
         self._word_()
         with self._optional():
@@ -145,7 +159,7 @@ class UnknownParser(Parser):
             with self._option():
                 with self._group():
                     self._token('"')
-                    self._alpha_()
+                    self._alphanumeric_()
                     self._token('"')
             with self._option():
                 self._token('True')
@@ -160,6 +174,11 @@ class UnknownParser(Parser):
                     self._value_()
                 self._closure(block0)
                 self._token(']')
+            with self._option():
+                with self._group():
+                    self._token('"')
+                    self._ascii_()
+                    self._token('"')
             self._error('expecting one of: False True')
 
     @graken()
@@ -343,6 +362,9 @@ class UnknownSemantics(object):
         return ast
 
     def operator(self, ast):
+        return ast
+
+    def ascii(self, ast):
         return ast
 
     def var_name(self, ast):

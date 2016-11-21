@@ -3,18 +3,22 @@ char b := "e"
 char c := "l"
 char d := "l"
 char e := "o"
+char f := "!"
 char g := "w"
 char h := "o"
 char i := "r"
 char j := "l"
 char k := "d"
+char l := "!"
 print(a)
 print(b)
 print(c)
 print(d)
 print(e)
+print(f)
 print(g)
 print(h)
 print(i)
 print(j)
 print(k)
+print(l)

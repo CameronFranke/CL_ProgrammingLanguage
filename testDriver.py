@@ -8,3 +8,4 @@ for x in testFiles:
 	myCodeGen = codeGenerator.codeGenerator(filename)
 	myCodeGen.traverseParseTree(myCodeGen.parseTree)
 	myCodeGen.write_x86_source()
+	myCodeGen.assemble("clTest")

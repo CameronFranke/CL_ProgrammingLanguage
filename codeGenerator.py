@@ -1,7 +1,8 @@
 import grako
 import json
 import clparser
-import clparsersemantics 
+import clparsersemantics
+import pexpect
 
 class codeGenerator(): 
 	def __init__(self, fileName):
@@ -63,7 +64,7 @@ class codeGenerator():
                 							# some parseing tasks easier 
 		if self.printSourceText: 
 			print("\n================== " + self.sourceFile + " ==================")
-			print processedText + "\n"
+			print repr(processedText) + "\n"
 			
 		self.sourceText = str(processedText)
 
@@ -270,9 +271,19 @@ class codeGenerator():
 
 		# Need to strip empty lines at the end of this function 
 
-
-
-
+	def assemble(self, outfile):
+		#self.xSourceFile 
+		p = pexpect.spawn("bash")
+		p.expect(":~") ## expect most recent prompt 
+		p.sendline("cd x86_tests")
+		p.expect(":~")
+		p.sendline("nasm -f elf64 -o test.o " + outfile + ".asm") #assemble code 
+		p.expect(":~")
+		p.sendline("ld test.o -o " + outfile)
+		x = p.expect(":~")
+		y = p.before
+		print x 
+		print y
 
 
 
