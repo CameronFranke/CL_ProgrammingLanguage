@@ -1,28 +1,8 @@
-char a := "H"
-char b := "e"
-char c := "l"
-char d := "l"
-char e := "o"
-char f := " "
-char g := "w"
-char h := "o"
-char i := "r"
-char j := "l"
-char k := "d"
-char l := "!"
-char m := "\n"
-print(a)
-print(b)
+char c
+int d
+c := "y"
+d := 100
 print(c)
 print(d)
-print(e)
-print(f)
-print(g)
-print(h)
-print(i)
-print(j)
-print(k)
-print(l)
-print(m)
-int numbersNstuff := 241
-print(numbersNstuff)
+char x := "\n"
+print(x)

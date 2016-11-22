@@ -40,6 +40,8 @@ class codeGenerator():
 		self.blockId = ["g"]
 		self.blockCount = 1
 		
+		self.variables = {} # varName: x, info: {scope, value?, type}
+	
 
 	def preprocessing(self):
                 temp = []
@@ -95,9 +97,11 @@ class codeGenerator():
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
 
-			if parseTree["type"] == "function_call":###########################################################
-				print("PLACEHOLDER FOR FUNCTION CALL HANDLING")
+			if parseTree["type"] == "function_call":
 				self.call_function(parseTree["value"])
+
+			if parseTree["type"] == "assignment":
+				self.assign_value(parseTree["value"])
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
@@ -114,6 +118,7 @@ class codeGenerator():
 			myLiteral = ""
 
 			decTree = parseTree["value"]
+			defined = False 
 			for token in decTree:
 				if type(token) == dict:
 					if token["type"] == "type_keyword":
@@ -123,15 +128,12 @@ class codeGenerator():
 						myName = token["value"]
 					
 					if token["type"] == "value":
+						defined = True 
 						myLiteral = token["value"]["value"]
-
-			myLiteral = self.clean_literal(myLiteral, myType)			
-
 			##
 			##	ASSEMBLY VARIABLE FORMAT
 			##	<scope id>_<type>_<name>
 			##	<scope id>_<value>_<name>
-
 
 			if myType == "int":
 				myName_val = self.blockId[-1] + "_val_" + myName 
@@ -139,9 +141,11 @@ class codeGenerator():
 				
 				self.xBss.append("\t" + myName_val + ":\t resq 1\n")
 				self.xBss.append("\t" + myName_type + ":\t resb 1\n")
-
-				self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
-				self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
+				
+				if defined:
+					myLiteral = self.clean_literal(myLiteral, myType)
+					self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
+					self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
 			
 			if myType == "char":
 				myName_val = self.blockId[-1] + "_val_" + myName 
@@ -150,9 +154,13 @@ class codeGenerator():
 				self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
 				self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
 				
-				self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
-				self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
+				if defined:
+					myLiteral = self.clean_literal(myLiteral, myType)
+					self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
+					self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
 
+			self.variables[myName] = {"type": myType, "scope": "g"}
+			
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
 			return 
@@ -164,12 +172,45 @@ class codeGenerator():
 		if myType == "char":
 			return """`""" + tree[1] + """`"""
 
+	def assign_value(self, tree):
+		print("=============================")
+		myName = ""
+		mySource = "" # should be dict obj
+		for x in tree:
+			print("\t" + str(x))
+			if type(x) == dict:
+				if x["type"] == "var_name": myName = x["value"]
+				if x["type"] == "value": mySource = x["value"]
+		
+		if mySource["type"] == "literal": ## check type, clean, generate code 
+			myLiteral = mySource["value"]
+			if type(myLiteral) == list:
+				myType = "char"
+				typeCode = "c"
+			if type(myLiteral) == unicode:
+				myType = "int"
+				typeCode = "i"
+			myLiteral = self.clean_literal(myLiteral, myType)
+			
+			#need to verify type similarity of target and source
+			
+			myName_val = self.blockId[-1] + "_val_" + myName
+			myName_type = self.blockId[-1] + "_type_" + myName
+
+			#self.xStart.append("\t\t\t;assignment")
+			self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")
+			self.xStart.append("\tmov byte [" + myName_type + '], "' + typeCode  + '"\n')
+
+
+		if mySource["type"] == "var_name": ## fetch from self.variable, generate code 
+			pass
+
+		return 
+
 	def call_function(self, tree):
 		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
 		fName = tree[0]["value"]
 		argName = tree[2]["value"]["value"]
-
-		print(fName, argName)
 
 		if fName in self.availableFunctions:
 			if fName not in self.loadedFunctions:
@@ -182,7 +223,6 @@ class codeGenerator():
 				myTrigger = myTrigger.replace("<INSERT_TYPE>", self.blockId[-1] + "_type_" + argName)
 				myTrigger = myTrigger.split("\n")
 				for line in myTrigger:
-					print line
 					self.xStart.append(line + "\n")
 
 		else:
@@ -261,7 +301,7 @@ class codeGenerator():
 			#print ("start: " + str(startTemp))
 			self.functionTriggers[fName] = startTemp
 			print ("code: ")
-			for x in primaryCode: print(x)
+			#for x in primaryCode: print(x)
 			self.functionCode.extend(primaryCode)
 
 		except Exception as e:

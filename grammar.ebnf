@@ -10,11 +10,11 @@ var_name = word ["[" value "]"];
 literal = (numeric ["." numeric]) | ('"' alphanumeric '"') | "True" | "False" | "[" value {"," value} "]" | '"' ascii '"';
 type_keyword = "int" | "char" | "bool" | "float";
 
-type_declaration = W type_keyword W var_name W ":=" W value W "\n";
+type_declaration = W type_keyword W var_name W [":=" W value ] W "\n";
 
 expression = "(" value operator value ")";
 value = literal | var_name | expression;
-assignment = var_name ":=" value;
+assignment = W var_name W ":=" W value W "\n";
 
 
 function_definition = W "def " type_keyword W var_name W "(" W [ type_keyword W var_name W {"," W type_keyword W var_name W} ] W ")" W ["\n"] block;

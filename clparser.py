@@ -218,9 +218,10 @@ class UnknownParser(Parser):
         self._W_()
         self._var_name_()
         self._W_()
-        self._token(':=')
-        self._W_()
-        self._value_()
+        with self._optional():
+            self._token(':=')
+            self._W_()
+            self._value_()
         self._W_()
         self._token('\n')
 
@@ -245,9 +246,14 @@ class UnknownParser(Parser):
 
     @graken()
     def _assignment_(self):
+        self._W_()
         self._var_name_()
+        self._W_()
         self._token(':=')
+        self._W_()
         self._value_()
+        self._W_()
+        self._token('\n')
 
     @graken()
     def _function_definition_(self):

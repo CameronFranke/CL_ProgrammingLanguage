@@ -36,6 +36,10 @@ class UnknownSemantics(object):
         return {"type": "value", "value": ast}
 
     def assignment(self, ast):
+	while [] in ast:
+            ast.remove([])
+	while [" "] in ast:
+	    ast.remove([" "])
         return {"type": "assignment", "value": ast}
 
     def function_definition(self, ast):
