@@ -1,1 +1,4 @@
 char c[5] := ["h", "e", "l", "l", "o"]
+char temp := "M"
+print(temp)
+print(c[2]) 

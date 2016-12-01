@@ -1,6 +1,6 @@
 section .bss
-	g_val_c:	 resq 4
-	g_type_c:	 resb 2
+	g_val_myChar:	 resb 64
+	g_type_myChar:	 resb 1
 	typeBuffer resb 8
         digitBuffer resb 100
         digitSpacePos resb 8
@@ -10,36 +10,20 @@ section .text
 	global _start
 
 _start:
-	mov byte [g_type_c], "a"
-	mov byte [g_type_c+1], "i"
-	mov byte [g_val_c+0],1
-	mov byte [g_val_c+8],3
-	mov byte [g_val_c+16],3
-	mov byte [g_val_c+24],7
-        mov r9, [g_val_c+0]		;mov value to reg
+	mov byte [g_val_myChar], `i`
+	mov byte [g_val_myChar + 1], `X`
+	mov byte [g_val_myChar + 2], `a`
+	mov byte [g_val_myChar + 3], `A`
+
+
+
+
+	mov byte [g_type_myChar], "c"
+        
+
+	mov r9, [g_val_myChar + 3]		;mov value to reg
 	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_c+1]		;mov type to reg
-	mov byte [typeBuffer], r9b		;mov reg to type buffer
-	call _print
-
-
-        mov r9, [g_val_c+8]		;mov value to reg
-	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_c+1]		;mov type to reg
-	mov byte [typeBuffer], r9b		;mov reg to type buffer
-	call _print
-
-
-        mov r9, [g_val_c+16]		;mov value to reg
-	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_c+1]		;mov type to reg
-	mov byte [typeBuffer], r9b		;mov reg to type buffer
-	call _print
-
-
-        mov r9, [g_val_c+24]		;mov value to reg
-	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_c+1]		;mov type to reg
+	mov r9b, [g_type_myChar]		;mov type to reg
 	mov byte [typeBuffer], r9b		;mov reg to type buffer
 	call _print
 

@@ -141,12 +141,38 @@ class codeGenerator():
 
 			if isArray:
 				if defined:
-					size = self.get_array_size(myName)
+					myName, size = self.get_array_info(myName)
 					print("ARRAY IS DEFINED")
 					print size
 					print myType
 					myLiteral = self.clean_literal(myLiteral, myType, array=True)
 					print myLiteral	
+
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
+
+					# first byte array specifier 
+					self.xStart.append("\tmov byte [" + myName_type + '], "a"\n')
+
+					myName_type = self.blockId[-1] + "_type_" + myName
+					myName_type = self.blockId[-1] + "_type_" + myName
+					
+					if myType == "char":    
+                                                self.xStart.append("\tmov byte [" + myName_type + '+1], "c"\n')
+                                                dataSize = 1
+                                        	self.xBss.append("\t" + myName_val + ":\t resb " + str(size) + "\n")
+					if myType == "int":     
+                                                self.xStart.append("\tmov byte [" + myName_type + '+1], "i"\n')
+                                                dataSize = 8 
+						self.xBss.append("\t" + myName_val + ":\t resq " + str(size) + "\n")
+
+					#need second byte for array (specifier, type)
+					self.xBss.append("\t" + myName_type + ":\t resb 2\n")
+						
+					for index, element in enumerate(myLiteral):
+						self.xStart.append("\tmov byte [" + myName_val + "+" + str(index*dataSize) + "]," + element + "\n")
+
+					self.variables[myName] = {"type": myType, "scope": "g"}
 
 			else:
 				if myType == "int":
@@ -155,11 +181,12 @@ class codeGenerator():
 				
 					self.xBss.append("\t" + myName_val + ":\t resq 1\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1\n")
-				
+					
+					self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
+					
 					if defined:
 						myLiteral = self.clean_literal(myLiteral, myType)
 						self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
-						self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
 			
 				if myType == "char":
 					myName_val = self.blockId[-1] + "_val_" + myName 
@@ -167,21 +194,22 @@ class codeGenerator():
 
 					self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
-				
+		
+					self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
+					
 					if defined:
 						myLiteral = self.clean_literal(myLiteral, myType)
 						self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
-						self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
 
-				self.variables[myName] = {"type": myType, "scope": "g"}
+				self.variables[myName] = {"type": myType, "scope": "g", "array": True}
 			
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
 			return 
 
-	def get_array_size(self, tree):
+	def get_array_info(self, tree):
 		if tree[1] == "[" and tree[-1] == "]":
-			return int(tree[2]["value"]["value"])
+			return tree[0], int(tree[2]["value"]["value"])
 
 
 	def clean_literal(self, tree, myType, array=False):
@@ -201,8 +229,46 @@ class codeGenerator():
 			if myType == "char":
 				return """`""" + tree[1] + """`"""
 
+
+	# test function thoroughly 
+	def name_resolver(self, tree):
+		# take in a var_name and return the proper constructed variable name + offset for 
+		# the type and the value
+
+		print("NAME RESOLVER")
+		print tree
+		print type(tree)
+		
+		if type(tree) == unicode:
+			name_val = self.blockId[-1] + "_val_" + tree
+			name_type = self.blockId[-1] + "_type_" + tree
+			return name_val, name_type
+		
+		if type(tree) == list:
+			for x in tree: print x
+			if tree[1] == "[" and tree[3] == "]":
+				name = tree[0]
+				index = int(tree[2]["value"]["value"])
+				if name in self.variables:
+					myType = self.variables[name]["type"]
+					if myType == "char":
+						multiplier = 1
+					elif myType == "int":
+						multiplier = 8 #qword
+					
+					return (self.blockId[-1] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[-1] + "_type_" + name + "+1")
+				
+				else:
+					print("Error in name resolution finction: variable not in self.variables")
+			else: 
+				print("Error in name resolution function - no brackets found")
+		else:
+			print("Error in name resolution function")		
+
+
 	def assign_value(self, tree):
-		print("=============================")
+		print("= = = = = = = = = = = = = = = = = =")
+		print tree
 		myName = ""
 		mySource = "" # should be dict obj
 		for x in tree:
@@ -220,21 +286,15 @@ class codeGenerator():
 				myType = "int"
 				typeCode = "i"
 			myLiteral = self.clean_literal(myLiteral, myType)
-			
 			#need to verify type similarity of target and source
 			
-			myName_val = self.blockId[-1] + "_val_" + myName
-			myName_type = self.blockId[-1] + "_type_" + myName
-
-			#self.xStart.append("\t\t\t;assignment")
+			myName_val,_ = self.name_resolver(myName)
 			self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")
-			self.xStart.append("\tmov byte [" + myName_type + '], "' + typeCode  + '"\n')
 
-
-		if mySource["type"] == "var_name": ## fetch from self.variable, generate code 
+		if mySource["type"] == "var_name": 	## fetch from self.variable, generate code 
 			pass
-
 		return 
+
 
 	def call_function(self, tree):
 		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
@@ -246,10 +306,13 @@ class codeGenerator():
 				self.load_function_from_lib(fName)
 				self.loadedFunctions.append(fName)
 
+			valName, typeName = self.name_resolver(argName)
+			print "\t", valName, "\t", typeName 
+
 			if fName in self.loadedFunctions:
 				myTrigger = str(self.functionTriggers[fName])
-				myTrigger = myTrigger.replace("<INSERT_VALUE>", self.blockId[-1] + "_val_" + argName)
-				myTrigger = myTrigger.replace("<INSERT_TYPE>", self.blockId[-1] + "_type_" + argName)
+				myTrigger = myTrigger.replace("<INSERT_VALUE>", valName)
+				myTrigger = myTrigger.replace("<INSERT_TYPE>", typeName)
 				myTrigger = myTrigger.split("\n")
 				for line in myTrigger:
 					self.xStart.append(line + "\n")
@@ -343,11 +406,14 @@ class codeGenerator():
 		p.expect(":~") ## expect most recent prompt 
 		p.sendline("cd x86_tests")
 		p.expect(":~")
+		print p.before
 		p.sendline("nasm -f elf64 -o test.o " + outfile + ".asm") #assemble code 
 		p.expect(":~")
+		print p.before
 		p.sendline("ld test.o -o " + outfile)
 		x = p.expect(":~")
 		y = p.before
+		print y
 
 
 
