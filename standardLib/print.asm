@@ -39,9 +39,9 @@ _print:
 
 ._printNum:
         mov rcx, digitBuffer
-        mov rbx, 10
-        mov [rcx], rbx 
-        inc rcx 
+        ;mov rbx, 10
+        ;mov [rcx], rbx 
+        ;inc rcx 
         mov [digitSpacePos], rcx 
 
 ._printNumLoop:
