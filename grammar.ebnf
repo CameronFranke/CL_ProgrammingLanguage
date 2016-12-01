@@ -7,7 +7,7 @@ ascii = ["?" | "!" | "." | "'" | " " | "\\n" | "$"];
 W = {"\t" | " "};
 
 var_name = word ["[" value "]"]; 
-literal = (numeric ["." numeric]) | ('"' alphanumeric '"') | "True" | "False" | "[" value {"," value} "]" | '"' ascii '"';
+literal = (numeric ["." numeric]) | ('"' alphanumeric '"') | "True" | "False" | "[" W value { W  "," W  value W } W "]" W | '"' ascii '"';
 type_keyword = "int" | "char" | "bool" | "float";
 
 type_declaration = W type_keyword W var_name W [":=" W value ] W "\n";

@@ -69,4 +69,4 @@ class UnknownSemantics(object):
         return ast
 
     def W(self, ast):
-	return ast
+	return

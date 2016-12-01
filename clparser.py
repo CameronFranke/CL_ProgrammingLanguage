@@ -185,13 +185,19 @@ class UnknownParser(Parser):
                 self._token('False')
             with self._option():
                 self._token('[')
+                self._W_()
                 self._value_()
 
                 def block0():
+                    self._W_()
                     self._token(',')
+                    self._W_()
                     self._value_()
+                    self._W_()
                 self._closure(block0)
+                self._W_()
                 self._token(']')
+                self._W_()
             with self._option():
                 self._token('"')
                 self._ascii_()

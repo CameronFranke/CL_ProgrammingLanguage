@@ -79,7 +79,8 @@ class codeGenerator():
 	
 	def traverseParseTree(self, parseTree):
 		
-		print "\n" + str(type(parseTree)) + ":" + str(parseTree) + "\n"
+		#print "\n" + str(type(parseTree)) + ":" + str(parseTree) + "\n"
+		## 		Uncomment above for debugging
 
 		if type(parseTree) == dict:
 			if not parseTree:
@@ -119,58 +120,86 @@ class codeGenerator():
 
 			decTree = parseTree["value"]
 			defined = False 
+			isArray = False 
 			for token in decTree:
 				if type(token) == dict:
 					if token["type"] == "type_keyword":
 						myType = token["value"]
-					
+
 					if token["type"] == "var_name":
 						myName = token["value"]
-					
+						if "[" in myName and "]" in myName:
+							isArray = True
+
 					if token["type"] == "value":
-						defined = True 
+						defined = True  
 						myLiteral = token["value"]["value"]
 			##
 			##	ASSEMBLY VARIABLE FORMAT
 			##	<scope id>_<type>_<name>
 			##	<scope id>_<value>_<name>
 
-			if myType == "int":
-				myName_val = self.blockId[-1] + "_val_" + myName 
-				myName_type = self.blockId[-1] + "_type_" + myName
-				
-				self.xBss.append("\t" + myName_val + ":\t resq 1\n")
-				self.xBss.append("\t" + myName_type + ":\t resb 1\n")
-				
+			if isArray:
 				if defined:
-					myLiteral = self.clean_literal(myLiteral, myType)
-					self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
-					self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
+					size = self.get_array_size(myName)
+					print("ARRAY IS DEFINED")
+					print size
+					print myType
+					myLiteral = self.clean_literal(myLiteral, myType, array=True)
+					print myLiteral	
+
+			else:
+				if myType == "int":
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
+				
+					self.xBss.append("\t" + myName_val + ":\t resq 1\n")
+					self.xBss.append("\t" + myName_type + ":\t resb 1\n")
+				
+					if defined:
+						myLiteral = self.clean_literal(myLiteral, myType)
+						self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
+						self.xStart.append("\tmov byte [" + myName_type + '], "i"\n')
 			
-			if myType == "char":
-				myName_val = self.blockId[-1] + "_val_" + myName 
-				myName_type = self.blockId[-1] + "_type_" + myName
+				if myType == "char":
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
 
-				self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
-				self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
+					self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
+					self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
 				
-				if defined:
-					myLiteral = self.clean_literal(myLiteral, myType)
-					self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
-					self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
+					if defined:
+						myLiteral = self.clean_literal(myLiteral, myType)
+						self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
+						self.xStart.append("\tmov byte [" + myName_type + '], "c"\n')
 
-			self.variables[myName] = {"type": myType, "scope": "g"}
+				self.variables[myName] = {"type": myType, "scope": "g"}
 			
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
 			return 
-	
 
-	def clean_literal(self, tree, myType):
-		if myType == "int":
-			return tree
-		if myType == "char":
-			return """`""" + tree[1] + """`"""
+	def get_array_size(self, tree):
+		if tree[1] == "[" and tree[-1] == "]":
+			return int(tree[2]["value"]["value"])
+
+
+	def clean_literal(self, tree, myType, array=False):
+		if array:
+			literals = [] 
+			if tree[0] == "[" and tree[-1] == "]":
+				literals.append(self.clean_literal(tree[1]["value"]["value"], myType)) #grab first item 
+				if type(tree[2]) == grako.contexts.Closure: #iterate over list of sucessive items
+					for element in tree[2]:
+						literals.append(self.clean_literal(element[1]["value"]["value"], myType))
+				return literals
+			else:
+				print("ERROR: DID NOT FIND BRACES")
+		else:
+			if myType == "int":
+				return tree
+			if myType == "char":
+				return """`""" + tree[1] + """`"""
 
 	def assign_value(self, tree):
 		print("=============================")
@@ -296,12 +325,9 @@ class codeGenerator():
 					if primaryFlag and i > index:
 						primaryCode.append(line)
 
-			#print ("bss: " + str(bssTemp))
 			self.xBss.extend(bssTemp)	
-			#print ("start: " + str(startTemp))
 			self.functionTriggers[fName] = startTemp
 			print ("code: ")
-			#for x in primaryCode: print(x)
 			self.functionCode.extend(primaryCode)
 
 		except Exception as e:
