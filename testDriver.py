@@ -1,11 +1,13 @@
 import codeGenerator 
-#testFiles = [1,2,3,4,5,6,7,8,9,10,11,12,13]
-testFiles = [12]
+import sys
 
+if len(sys.argv) > 1:
+	x = sys.argv[1]
+else:
+	x = 11 # will default to hello world 
 
-for x in testFiles:
-	filename = "tests/cgt" + str(x).replace("\n", "")
-	myCodeGen = codeGenerator.codeGenerator(filename)
-	myCodeGen.traverseParseTree(myCodeGen.parseTree)
-	myCodeGen.write_x86_source()
-	myCodeGen.assemble("clTest")
+filename = "tests/cgt" + str(x).replace("\n", "")
+myCodeGen = codeGenerator.codeGenerator(filename)
+myCodeGen.traverseParseTree(myCodeGen.parseTree)
+myCodeGen.write_x86_source()
+myCodeGen.assemble("clTest")
