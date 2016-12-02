@@ -1,0 +1,10 @@
+int a := 5
+int b := 10
+int c := 10
+int d 
+char newline := "\n"
+d := (c == b)
+print(d)
+a := (c == b)
+print(a)
+print(newline)

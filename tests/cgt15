@@ -3,5 +3,12 @@ int b := 10
 int c := 10
 int d 
 char newline := "\n"
+d := (c != b)
+print(d)
+print(newline)
 d := (a == b)
-
+print(d)
+print(newline)
+d := (b == c)
+print(d)
+print(newline)

@@ -18,7 +18,7 @@ class codeGenerator():
 		
 		self.test_types_to_declare = []
 
-		self.availableFunctions = ["print"]
+		self.availableFunctions = ["print", "cl_bool_op"]
 		self.loadedFunctions = []
 		##	When loading in functions from std lib check for availability and for load status.
 		##	The _start section will contain the code the is needed when the funciton is to be called,
@@ -41,7 +41,7 @@ class codeGenerator():
 		self.blockCount = 1
 		
 		self.variables = {} # varName: x, info: {scope, value?, type}
-		self.xBss.append("\texprResolutionBuffer:\tresq 1\n") ## repression resolution buffer 
+
 
 	def preprocessing(self):
                 temp = []
@@ -76,12 +76,8 @@ class codeGenerator():
                 	print(json.dumps(self.parseTree, indent=2)) # ASTs are JSON-friendy
 			print("==================================================")
 
-	
-	def traverseParseTree(self, parseTree):
-		
-		#print "\n" + str(type(parseTree)) + ":" + str(parseTree) + "\n"
-		## 		Uncomment above for debugging
 
+	def traverseParseTree(self, parseTree):
 		if type(parseTree) == dict:
 			if not parseTree:
 				return 
@@ -239,13 +235,28 @@ class codeGenerator():
 		if tree[0] == "(" and tree[-1] == ")":
 			operator = tree[2]["value"]
 		
+			###   What if these are literals? name resolver need to be able to recognize and handle literals ### 
 			operand_1_Address, operand_1_type_Address, operand_1_type = self.name_resolver(tree[1]["value"]["value"])
 			operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
 			
 			if operand_1_type == operand_2_type:
-				print "expression types match"
+				print "expression types match" ###################################################### Print 
 				if operator == "==" or operator == "!=": # Boolean operators 
-					print "Caught boolean operator" 	
+					print "Caught boolean operator" ############################################## Print	
+					if "cl_bool_op" not in self.loadedFunctions:
+                                                        self.load_function_from_lib("cl_bool_op")
+							self.loadedFunctions.append("cl_bool_op")			
+
+					self.xStart.append("\tmov r11b, [" + operand_1_Address + "];mov op1 to reg\n")
+					self.xStart.append("\tmov r12b, [" + operand_2_Address + "];mov op2 to reg\n")
+
+
+
+					if operator == "==": 
+						self.xStart.append("\tcall _cl_is_equal\n")
+					
+					elif operator == "!=":
+						self.xStart.append("\tcall _cl_is_not_equal\n")
 
 
 				elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
@@ -340,6 +351,10 @@ class codeGenerator():
 		
 		if mySource["type"] == "expression":
 			self.expression_handler(mySource["value"])
+			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)	
+			if targetType == "int":
+				self.xStart.append("\tmov r11, [exprResolutionBuffer]\n")
+				self.xStart.append("\tmov qword [" + myTargetAddress + "], r11\n")
 
 
 
