@@ -41,7 +41,7 @@ class codeGenerator():
 		self.blockCount = 1
 		
 		self.variables = {} # varName: x, info: {scope, value?, type}
-	
+		self.xBss.append("\texprResolutionBuffer:\tresq 1\n") ## repression resolution buffer 
 
 	def preprocessing(self):
                 temp = []
@@ -142,11 +142,7 @@ class codeGenerator():
 			if isArray:
 				if defined:
 					myName, size = self.get_array_info(myName)
-					print("ARRAY IS DEFINED")
-					print size
-					print myType
 					myLiteral = self.clean_literal(myLiteral, myType, array=True)
-					print myLiteral	
 
 					myName_val = self.blockId[-1] + "_val_" + myName 
 					myName_type = self.blockId[-1] + "_type_" + myName
@@ -230,7 +226,43 @@ class codeGenerator():
 				return """`""" + tree[1] + """`"""
 
 
-	# test function thoroughly 
+	def expression_handler(self, tree):
+		# this function need to accept a tree that contains an expression (or nested expressions)
+		# and create the code necissary to place the result of the expression into the designated
+		# expression resolution buffer. This way the result of the expression can be references 
+		# later with other mothods 
+		# 	exprResolutionBuffer 
+		print("= = = = = EXPRESSION HANDLER = = = = = ")
+		for x in tree: print "\t", x
+		
+		#sanity check 
+		if tree[0] == "(" and tree[-1] == ")":
+			operator = tree[2]["value"]
+		
+			operand_1_Address, operand_1_type_Address, operand_1_type = self.name_resolver(tree[1]["value"]["value"])
+			operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
+			
+			if operand_1_type == operand_2_type:
+				print "expression types match"
+				if operator == "==" or operator == "!=": # Boolean operators 
+					print "Caught boolean operator" 	
+
+
+				elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
+                                	print "Caught arithmetic operator"
+
+			else:
+				print "Expression operand type mismatch, return false or error?..."
+
+
+
+
+
+
+
+
+
+
 	def name_resolver(self, tree):
 		# take in a var_name and return the proper constructed variable name + offset for 
 		# the type and the value
@@ -245,7 +277,6 @@ class codeGenerator():
 			return name_val, name_type, self.variables[tree]["type"]
 		
 		if type(tree) == list:
-			for x in tree: print x
 			if tree[1] == "[" and tree[3] == "]":
 				name = tree[0]
 				index = int(tree[2]["value"]["value"])
@@ -267,12 +298,10 @@ class codeGenerator():
 
 
 	def assign_value(self, tree):
-		print("= = = = = = = = = = = = = = = = = =")
-		print tree
 		myName = ""
 		mySource = "" # should be dict obj
 		for x in tree:
-			print("\t" + str(x))
+			#print("\t" + str(x))
 			if type(x) == dict:
 				if x["type"] == "var_name": myName = x["value"]
 				if x["type"] == "value": mySource = x["value"]
@@ -294,11 +323,8 @@ class codeGenerator():
 		if mySource["type"] == "var_name": 
 			mySourceAddress, sourceTypeAddress, sourceType = self.name_resolver(mySource["value"])
 			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)
-			# source to reg 
-			# reg to target 
-
 			
-			print "source type: \t", sourceType, targetType
+			#print "source type: \t", sourceType, targetType
 
 			if True: # this is a good place to do some type checking 
 				if sourceType == "int":
@@ -311,9 +337,12 @@ class codeGenerator():
 
 			else:
 				print("ERROR: invalid type addignment: " + sourceType + " to " + targetType) 
-			
-			
-			#self.xStart.append("\tmov byte [" + myName_val + "], " + mySource + "\n")	
+		
+		if mySource["type"] == "expression":
+			self.expression_handler(mySource["value"])
+
+
+
 		return 
 	
 
@@ -328,7 +357,7 @@ class codeGenerator():
 				self.loadedFunctions.append(fName)
 
 			valName, typeName,_ = self.name_resolver(argName)
-			print "\t", valName, "\t", typeName 
+			#print "\t", valName, "\t", typeName 
 
 			if fName in self.loadedFunctions:
 				myTrigger = str(self.functionTriggers[fName])
@@ -435,29 +464,3 @@ class codeGenerator():
 		x = p.expect(":~")
 		y = p.before
 		print y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
