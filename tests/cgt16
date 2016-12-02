@@ -10,7 +10,7 @@ print(b)
 print(c)
 print(d)
 
-a := (c == b)
+a := (b == c)
 print(newline)
 print(b)
 print(c)

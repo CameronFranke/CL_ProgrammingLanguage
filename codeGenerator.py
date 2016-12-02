@@ -249,7 +249,7 @@ class codeGenerator():
 
 					self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
 					self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
-
+					self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
 
 
 					if operator == "==": 

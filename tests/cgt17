@@ -6,18 +6,18 @@ char letter2 := "Y"
 char letter3 := "X"
 char newline := "\n"
 
-d := (a != b)
+d := (letter1 == letter3)
 print(d)
 print(newline)
 
-a := (a == b)
-print(a)
-print(newline)
-
-d := (letter1 == letter2)
+d := (letter1 != letter2)
 print(d)
 print(newline)
 
-d := (letter1 != letter3)
+d := (letter3 == letter1)
+print(d)
+print(newline)
+
+d := (letter3 != letter2)
 print(d)
 print(newline)

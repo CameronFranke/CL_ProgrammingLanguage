@@ -1,2 +1,3 @@
 *.pyc
 ast.json
+*.o

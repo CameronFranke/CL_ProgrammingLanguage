@@ -1,10 +1,6 @@
 section .bss
-	g_val_a:	 resq 1
-	g_type_a:	 resb 1
-	g_val_b:	 resq 1
-	g_type_b:	 resb 1
-	g_val_c:	 resq 1
-	g_type_c:	 resb 1
+	g_val_a:	 resq 6
+	g_type_a:	 resb 2
 	g_val_d:	 resq 1
 	g_type_d:	 resb 1
 	g_val_newline:	 resb 1
@@ -19,17 +15,40 @@ section .text
 	global _start
 
 _start:
-	mov byte [g_type_a], "i"
-	mov word [g_val_a], 5
-	mov byte [g_type_b], "i"
-	mov word [g_val_b], 10
-	mov byte [g_type_c], "i"
-	mov word [g_val_c], 10
+	mov byte [g_type_a], "a"
+	mov byte [g_type_a+1], "i"
+	mov byte [g_val_a+0],1
+	mov byte [g_val_a+8],1
+	mov byte [g_val_a+16],2
+	mov byte [g_val_a+24],3
+	mov byte [g_val_a+32],5
+	mov byte [g_val_a+40],8
 	mov byte [g_type_d], "i"
 	mov byte [g_type_newline], "c"
 	mov byte [g_val_newline], `\n`
-	mov r11b, [g_val_c];mov op1 to reg
-	mov r12b, [g_val_b];mov op2 to reg
+	mov r11, [g_val_a+0];mov op1 to reg
+	mov r12, [g_val_a+8];mov op2 to reg
+	mov r13, [g_type_a+1]; mov op1 type to reg
+	call _cl_is_not_equal
+	mov r11, [exprResolutionBuffer]
+	mov qword [g_val_d], r11
+        mov r9, [g_val_d]		;mov value to reg
+	mov [digitBuffer], r9			;mov reg to value buffer
+	mov r9b, [g_type_d]		;mov type to reg
+	mov byte [typeBuffer], r9b		;mov reg to type buffer
+	call _print
+
+
+        mov r9, [g_val_newline]		;mov value to reg
+	mov [digitBuffer], r9			;mov reg to value buffer
+	mov r9b, [g_type_newline]		;mov type to reg
+	mov byte [typeBuffer], r9b		;mov reg to type buffer
+	call _print
+
+
+	mov r11, [g_val_a+8];mov op1 to reg
+	mov r12, [g_val_a+16];mov op2 to reg
+	mov r13, [g_type_a+1]; mov op1 type to reg
 	call _cl_is_equal
 	mov r11, [exprResolutionBuffer]
 	mov qword [g_val_d], r11
@@ -40,14 +59,22 @@ _start:
 	call _print
 
 
-	mov r11b, [g_val_c];mov op1 to reg
-	mov r12b, [g_val_b];mov op2 to reg
-	call _cl_is_equal
-	mov r11, [exprResolutionBuffer]
-	mov qword [g_val_a], r11
-        mov r9, [g_val_a]		;mov value to reg
+        mov r9, [g_val_newline]		;mov value to reg
 	mov [digitBuffer], r9			;mov reg to value buffer
-	mov r9b, [g_type_a]		;mov type to reg
+	mov r9b, [g_type_newline]		;mov type to reg
+	mov byte [typeBuffer], r9b		;mov reg to type buffer
+	call _print
+
+
+	mov r11, [g_val_a+16];mov op1 to reg
+	mov r12, [g_val_a+40];mov op2 to reg
+	mov r13, [g_type_a+1]; mov op1 type to reg
+	call _cl_is_not_equal
+	mov r11, [exprResolutionBuffer]
+	mov qword [g_val_d], r11
+        mov r9, [g_val_d]		;mov value to reg
+	mov [digitBuffer], r9			;mov reg to value buffer
+	mov r9b, [g_type_d]		;mov type to reg
 	mov byte [typeBuffer], r9b		;mov reg to type buffer
 	call _print
 
@@ -64,23 +91,59 @@ _exit:
 	mov rdi, 0
 	syscall
 _cl_is_equal:
+	cmp r13b, "i"
+	je ._int 	
+	cmp r13b, "c"
+	je ._char	
+
+._int:
 	cmp r11, r12
-	je ._set_true 
-	jne ._set_false	
-._set_true:
+	je ._set_true_i 
+	jne ._set_false_i	
+._set_true_i:
 	mov qword [exprResolutionBuffer], 1
 	ret	
-._set_false:
+._set_false_i:
 	mov qword [exprResolutionBuffer], 0
 	ret
-_cl_is_not_equal:
-        cmp r11, r12
-        je ._set_not_true
-        jne ._set_not_false
-._set_not_true:
+
+._char:
+        cmp r11b, r12b
+        je ._set_true_c
+        jne ._set_false_c
+._set_true_c:
+        mov qword [exprResolutionBuffer], 1
+        ret
+._set_false_c:
         mov qword [exprResolutionBuffer], 0
         ret
-._set_not_false:
+
+
+_cl_is_not_equal:
+        cmp r13b, "i"
+        je ._int
+        cmp r13b, "c"
+        je ._char
+
+._int:
+        cmp r11, r12
+        je ._set_not_true_i
+        jne ._set_not_false_i
+._set_not_true_i:
+        mov qword [exprResolutionBuffer], 0
+        ret
+._set_not_false_i:
+        mov qword [exprResolutionBuffer], 1
+        ret
+
+._char:
+        cmp r11b, r12b
+        je ._set_not_true_c
+        jne ._set_not_false_c
+._set_not_true_c:
+        mov qword [exprResolutionBuffer], 0
+        ret
+._set_not_false_c:
         mov qword [exprResolutionBuffer], 1
         ret
 _print:

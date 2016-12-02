@@ -1,0 +1,15 @@
+int a[6] := [1,1,2,3,5,8]
+int d 
+char newline := "\n"
+
+d := (a[0] != a[1])
+print(d)
+print(newline)
+
+d := (a[1] == a[2])
+print(d)
+print(newline)
+
+d := (a[2] != a[5])
+print(d)
+print(newline)
