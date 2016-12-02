@@ -233,11 +233,17 @@ class UnknownParser(Parser):
 
     @graken()
     def _expression_(self):
+        self._W_()
         self._token('(')
+        self._W_()
         self._value_()
+        self._W_()
         self._operator_()
+        self._W_()
         self._value_()
+        self._W_()
         self._token(')')
+        self._W_()
 
     @graken()
     def _value_(self):

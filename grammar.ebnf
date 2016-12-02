@@ -12,7 +12,7 @@ type_keyword = "int" | "char" | "bool" | "float";
 
 type_declaration = W type_keyword W var_name W [":=" W value ] W "\n";
 
-expression = "(" value operator value ")";
+expression = W "(" W value W operator W value W ")" W;
 value = literal | var_name | expression;
 assignment = W var_name W ":=" W value W "\n";
 

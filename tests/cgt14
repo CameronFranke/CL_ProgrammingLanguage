@@ -1,0 +1,19 @@
+int c[4] := [1,2,3,4]
+char newline := "\n"
+int temp
+temp := c[3] 
+print(c[0])
+print(c[1])
+print(c[2])
+print(c[3])
+print(newline)
+print(temp)
+print(newline)
+temp := 9
+c[3] := temp
+print(c[0])
+print(c[1])
+print(c[2])
+print(c[3])
+
+

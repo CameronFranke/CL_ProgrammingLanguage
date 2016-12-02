@@ -235,14 +235,14 @@ class codeGenerator():
 		# take in a var_name and return the proper constructed variable name + offset for 
 		# the type and the value
 
-		print("NAME RESOLVER")
-		print tree
-		print type(tree)
+		#print("NAME RESOLVER")
+		#print tree
+		#print type(tree)
 		
 		if type(tree) == unicode:
 			name_val = self.blockId[-1] + "_val_" + tree
 			name_type = self.blockId[-1] + "_type_" + tree
-			return name_val, name_type
+			return name_val, name_type, self.variables[tree]["type"]
 		
 		if type(tree) == list:
 			for x in tree: print x
@@ -256,7 +256,7 @@ class codeGenerator():
 					elif myType == "int":
 						multiplier = 8 #qword
 					
-					return (self.blockId[-1] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[-1] + "_type_" + name + "+1")
+					return (self.blockId[-1] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[-1] + "_type_" + name + "+1"), myType
 				
 				else:
 					print("Error in name resolution finction: variable not in self.variables")
@@ -288,13 +288,34 @@ class codeGenerator():
 			myLiteral = self.clean_literal(myLiteral, myType)
 			#need to verify type similarity of target and source
 			
-			myName_val,_ = self.name_resolver(myName)
+			myName_val,_,_ = self.name_resolver(myName)
 			self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")
 
-		if mySource["type"] == "var_name": 	## fetch from self.variable, generate code 
-			pass
-		return 
+		if mySource["type"] == "var_name": 
+			mySourceAddress, sourceTypeAddress, sourceType = self.name_resolver(mySource["value"])
+			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)
+			# source to reg 
+			# reg to target 
 
+			
+			print "source type: \t", sourceType, targetType
+
+			if True: # this is a good place to do some type checking 
+				if sourceType == "int":
+					self.xStart.append("mov r9, [" + mySourceAddress + "]\n")
+					self.xStart.append("mov [" + myTargetAddress + "], r9\n")
+			
+				if sourceType == "char":
+					self.xStart.append("mov r9b, [" + mySourceAddress + "]\n")
+					self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
+
+			else:
+				print("ERROR: invalid type addignment: " + sourceType + " to " + targetType) 
+			
+			
+			#self.xStart.append("\tmov byte [" + myName_val + "], " + mySource + "\n")	
+		return 
+	
 
 	def call_function(self, tree):
 		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
@@ -306,7 +327,7 @@ class codeGenerator():
 				self.load_function_from_lib(fName)
 				self.loadedFunctions.append(fName)
 
-			valName, typeName = self.name_resolver(argName)
+			valName, typeName,_ = self.name_resolver(argName)
 			print "\t", valName, "\t", typeName 
 
 			if fName in self.loadedFunctions:
