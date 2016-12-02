@@ -247,8 +247,8 @@ class codeGenerator():
                                                         self.load_function_from_lib("cl_bool_op")
 							self.loadedFunctions.append("cl_bool_op")			
 
-					self.xStart.append("\tmov r11b, [" + operand_1_Address + "];mov op1 to reg\n")
-					self.xStart.append("\tmov r12b, [" + operand_2_Address + "];mov op2 to reg\n")
+					self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
+					self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
 
 
 
@@ -352,7 +352,7 @@ class codeGenerator():
 		if mySource["type"] == "expression":
 			self.expression_handler(mySource["value"])
 			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)	
-			if targetType == "int":
+			if targetType == "int" or targetType == "char":
 				self.xStart.append("\tmov r11, [exprResolutionBuffer]\n")
 				self.xStart.append("\tmov qword [" + myTargetAddress + "], r11\n")
 

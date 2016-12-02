@@ -1,10 +1,38 @@
 int a := 5
-int b := 10
-int c := 10
+int b := 7
+int c := 7
 int d 
+int e := 1
 char newline := "\n"
+
 d := (c == b)
+print(b)
+print(c)
 print(d)
+
 a := (c == b)
+print(newline)
+print(b)
+print(c)
 print(a)
+
+a := (c != b)
+print(newline)
+print(b)
+print(c)
+print(a)
+
+a := (a == b)
+print(newline)
+print(b)
+print(c)
+print(a)
+
+a := (a != e)
+print(newline)
+print(b)
+print(c)
+print(a)
+
+
 print(newline)
