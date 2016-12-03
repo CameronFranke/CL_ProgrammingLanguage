@@ -158,6 +158,18 @@ class UnknownParser(Parser):
         self._closure(block0)
 
     @graken()
+    def _NW_(self):
+
+        def block0():
+            with self._choice():
+                with self._option():
+                    self._token('\n')
+                with self._option():
+                    self._W_()
+                self._error('expecting one of: \n')
+        self._closure(block0)
+
+    @graken()
     def _var_name_(self):
         self._word_()
         with self._optional():
@@ -322,12 +334,13 @@ class UnknownParser(Parser):
 
     @graken()
     def _condition_statement_(self):
+        self._W_()
         self._token('if')
+        self._W_()
         self._value_()
+        self._NW_()
         self._block_()
-        with self._optional():
-            self._token('else')
-            self._block_()
+        self._NW_()
 
     @graken()
     def _loop_statement_(self):
@@ -348,32 +361,30 @@ class UnknownParser(Parser):
     @graken()
     def _block_(self):
         self._token('{')
-        self._pattern(r'$')
+        self._NW_()
 
         def block0():
             with self._choice():
                 with self._option():
+                    self._function_call_()
+                with self._option():
                     self._type_declaration_()
                 with self._option():
-                    self._expression_()
-                with self._option():
                     self._assignment_()
-                with self._option():
-                    self._function_call_()
                 with self._option():
                     self._control_statement_()
                 self._error('no available options')
         self._closure(block0)
-        with self._optional():
-            self._pattern(r'$')
+        self._NW_()
         self._token('}')
+        self._NW_()
 
     @graken()
     def _program_(self):
         self._token('@@@')
 
         def block0():
-            self._pattern(r'$')
+            self._token('\n')
         self._closure(block0)
 
         def block1():
@@ -389,12 +400,14 @@ class UnknownParser(Parser):
                 with self._option():
                     self._function_call_()
                 with self._option():
-                    self._control_statement_()
+                    self._condition_statement_()
+                with self._option():
+                    self._block_()
                 self._error('no available options')
         self._closure(block1)
 
         def block3():
-            self._pattern(r'$')
+            self._token('\n')
         self._closure(block3)
         self._token('@@@')
 
@@ -428,6 +441,9 @@ class UnknownSemantics(object):
         return ast
 
     def W(self, ast):
+        return ast
+
+    def NW(self, ast):
         return ast
 
     def var_name(self, ast):

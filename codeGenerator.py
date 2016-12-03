@@ -91,14 +91,23 @@ class codeGenerator():
 			
 			if parseTree["type"] == "block":
 				self.blockId.append(self.genBlockId())
+				self.blockCount+=1
+				print "ping", self.blockId
+				self.xStart.append("_" + self.blockId[-1] + "_block_header:\n")
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
+				self.xStart.append("_" + self.blockId[-1] + "_block_footer:\n")
+				self.blockId.pop()
 
 			if parseTree["type"] == "function_call":
 				self.call_function(parseTree["value"])
 
 			if parseTree["type"] == "assignment":
 				self.assign_value(parseTree["value"])
+			
+			if parseTree["type"] == "condition_statement":
+				self.condition_statement_handler(parseTree["value"])
+			
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
@@ -107,6 +116,20 @@ class codeGenerator():
 		# return on unhandled object
 		return 	
 	
+	def condition_statement_handler(self, tree):
+		while (["\n"] in tree): tree.remove(["\n"])
+		while ([None] in tree): tree.remove([None])
+		
+		for x in tree: print "\t", x ############### print 
+		if tree[0] == "if" and len(tree) == 3:	#sanity check, tree: [if, expression, block]
+			self.expression_handler(tree[1]["value"]["value"])
+			my_block_header = self.genBlockId()
+			self.xStart.append("\tmov qword r11, [exprResolutionBuffer]\n")
+			self.xStart.append("\tcmp qword r11, 1\n")
+			self.xStart.append("\tjne _" + my_block_header + "_block_footer\n")			
+			self.traverseParseTree(tree[2])
+				
+				
 	def declare_type(self, parseTree):
 		if parseTree["type"] == "type_declaration": 
 			
@@ -140,14 +163,14 @@ class codeGenerator():
 					myName, size = self.get_array_info(myName)
 					myLiteral = self.clean_literal(myLiteral, myType, array=True)
 
-					myName_val = self.blockId[-1] + "_val_" + myName 
-					myName_type = self.blockId[-1] + "_type_" + myName
+					myName_val = self.blockId[0] + "_val_" + myName 
+					myName_type = self.blockId[0] + "_type_" + myName
 
 					# first byte array specifier 
 					self.xStart.append("\tmov byte [" + myName_type + '], "a"\n')
 
-					myName_type = self.blockId[-1] + "_type_" + myName
-					myName_type = self.blockId[-1] + "_type_" + myName
+					myName_type = self.blockId[0] + "_type_" + myName
+					myName_type = self.blockId[0] + "_type_" + myName
 					
 					if myType == "char":    
                                                 self.xStart.append("\tmov byte [" + myName_type + '+1], "c"\n')
@@ -168,8 +191,8 @@ class codeGenerator():
 
 			else:
 				if myType == "int":
-					myName_val = self.blockId[-1] + "_val_" + myName 
-					myName_type = self.blockId[-1] + "_type_" + myName
+					myName_val = self.blockId[0] + "_val_" + myName 
+					myName_type = self.blockId[0] + "_type_" + myName
 				
 					self.xBss.append("\t" + myName_val + ":\t resq 1\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1\n")
@@ -181,8 +204,8 @@ class codeGenerator():
 						self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
 			
 				if myType == "char":
-					myName_val = self.blockId[-1] + "_val_" + myName 
-					myName_type = self.blockId[-1] + "_type_" + myName
+					myName_val = self.blockId[0] + "_val_" + myName 
+					myName_type = self.blockId[0] + "_type_" + myName
 
 					self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
@@ -227,51 +250,46 @@ class codeGenerator():
 		# and create the code necissary to place the result of the expression into the designated
 		# expression resolution buffer. This way the result of the expression can be references 
 		# later with other mothods 
-		# 	exprResolutionBuffer 
-		print("= = = = = EXPRESSION HANDLER = = = = = ")
-		for x in tree: print "\t", x
+		# 							exprResolutionBuffer 
+		#print("= = = = = EXPRESSION HANDLER = = = = = ")
+		#for x in tree: print "\t", x
 		
 		#sanity check 
 		if tree[0] == "(" and tree[-1] == ")":
 			operator = tree[2]["value"]
 		
 			###   What if these are literals? name resolver need to be able to recognize and handle literals ### 
-			operand_1_Address, operand_1_type_Address, operand_1_type = self.name_resolver(tree[1]["value"]["value"])
-			operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
 			
-			if operand_1_type == operand_2_type:
-				print "expression types match" ###################################################### Print 
-				if operator == "==" or operator == "!=": # Boolean operators 
-					print "Caught boolean operator" ############################################## Print	
-					if "cl_bool_op" not in self.loadedFunctions:
-                                                        self.load_function_from_lib("cl_bool_op")
-							self.loadedFunctions.append("cl_bool_op")			
+			if tree[1]["value"]["type"] == "var_name":
+				operand_1_Address, operand_1_type_Address, operand_1_type = self.name_resolver(tree[1]["value"]["value"])	
+			
+			if tree[3]["value"]["type"] == "var_name":
+				operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
+			#
+			#	Modifications needed to support nested expressions 
+			#
 
-					self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
-					self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
-					self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
+			if operator == "==" or operator == "!=": # Boolean operators 
+				if "cl_bool_op" not in self.loadedFunctions:
+                                	self.load_function_from_lib("cl_bool_op")
+					self.loadedFunctions.append("cl_bool_op")			
+
+				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
+				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
+				self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
 
 
-					if operator == "==": 
-						self.xStart.append("\tcall _cl_is_equal\n")
+				if operator == "==": 
+					self.xStart.append("\tcall _cl_is_equal\n")
 					
-					elif operator == "!=":
-						self.xStart.append("\tcall _cl_is_not_equal\n")
+				elif operator == "!=":
+					self.xStart.append("\tcall _cl_is_not_equal\n")
 
-
-				elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
-                                	print "Caught arithmetic operator"
+			elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
+                                print "Caught arithmetic operator"
 
 			else:
 				print "Expression operand type mismatch, return false or error?..."
-
-
-
-
-
-
-
-
 
 
 	def name_resolver(self, tree):
@@ -283,8 +301,8 @@ class codeGenerator():
 		#print type(tree)
 		
 		if type(tree) == unicode:
-			name_val = self.blockId[-1] + "_val_" + tree
-			name_type = self.blockId[-1] + "_type_" + tree
+			name_val = self.blockId[0] + "_val_" + tree
+			name_type = self.blockId[0] + "_type_" + tree
 			return name_val, name_type, self.variables[tree]["type"]
 		
 		if type(tree) == list:
@@ -298,7 +316,7 @@ class codeGenerator():
 					elif myType == "int":
 						multiplier = 8 #qword
 					
-					return (self.blockId[-1] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[-1] + "_type_" + name + "+1"), myType
+					return (self.blockId[0] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[0] + "_type_" + name + "+1"), myType
 				
 				else:
 					print("Error in name resolution finction: variable not in self.variables")
@@ -419,9 +437,8 @@ class codeGenerator():
 			idStr.append(effectiveAlphabet[temp / len(effectiveAlphabet)])
 			temp = temp % len(effectiveAlphbet)
 
-		idStr.append(effectiveAlphabet[temp])
-		self.blockCount+=1
-		return temp
+		idStr += effectiveAlphabet[temp]
+		return idStr
 
 
 	def load_function_from_lib(self, fName):
@@ -455,7 +472,6 @@ class codeGenerator():
 
 			self.xBss.extend(bssTemp)	
 			self.functionTriggers[fName] = startTemp
-			print ("code: ")
 			self.functionCode.extend(primaryCode)
 
 		except Exception as e:

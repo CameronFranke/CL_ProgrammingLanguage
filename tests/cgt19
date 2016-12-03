@@ -1,0 +1,12 @@
+int x := 1
+int y := 1
+char first := "F"
+char second := "S"
+char newline := "\n"
+if 1
+{
+	print(first)
+	print(newline)
+}
+print(second)
+print(newline)

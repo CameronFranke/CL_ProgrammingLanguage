@@ -5,6 +5,7 @@ word = /[a-zA-z][a-zA-Z0-9]*/;
 operator = "+" | "-" | "*" | "/" | ":=" | "==" | "!=" | ">" | "<" | ">=" | "<=";
 ascii = ["?" | "!" | "." | "'" | " " | "\\n" | "$"];
 W = {"\t" | " "};
+NW = { "\n" | W };
 
 var_name = word ["[" value "]"]; 
 literal = (numeric ["." numeric]) | ('"' alphanumeric '"') | "True" | "False" | "[" W value { W  "," W  value W } W "]" W | '"' ascii '"';
@@ -21,12 +22,12 @@ function_definition = W "def " type_keyword W var_name W "(" W [ type_keyword W 
 function_call = W var_name W "(" W [ value W { W "," W value}] W ")" W "\n";
 
 
-condition_statement = "if" value block ["else" block];
+condition_statement = W "if" W value NW block NW;
 loop_statement = "do" block "while" block;
 control_statement = condition_statement | loop_statement;
 
-block = "{" /$/  { type_declaration | expression | assignment | function_call | control_statement } [/$/] "}";
-program = "@@@" {/$/} {function_definition | type_declaration | expression | assignment | function_call | control_statement} {/$/} "@@@";
+block = "{" NW {function_call | type_declaration | assignment | control_statement} NW "}" NW;
+program = "@@@" {"\n"} {function_definition | type_declaration | expression | assignment | function_call | condition_statement | block} {"\n"} "@@@";
 
 comment = "#" {/./} /$/;
 

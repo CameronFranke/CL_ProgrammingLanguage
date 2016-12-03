@@ -1,0 +1,15 @@
+int x := 1
+int y := 1
+int z := 1
+char first := "A"
+char second := "B"
+char third := "C"
+if (y == x)
+{
+	print(first)
+	if (y == z)
+	{
+		print(second)
+	}
+}
+print(third)
