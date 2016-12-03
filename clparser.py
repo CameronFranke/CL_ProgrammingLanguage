@@ -344,10 +344,13 @@ class UnknownParser(Parser):
 
     @graken()
     def _loop_statement_(self):
-        self._token('do')
-        self._block_()
+        self._W_()
         self._token('while')
+        self._W_()
+        self._value_()
+        self._NW_()
         self._block_()
+        self._NW_()
 
     @graken()
     def _control_statement_(self):
@@ -400,7 +403,7 @@ class UnknownParser(Parser):
                 with self._option():
                     self._function_call_()
                 with self._option():
-                    self._condition_statement_()
+                    self._control_statement_()
                 with self._option():
                     self._block_()
                 self._error('no available options')

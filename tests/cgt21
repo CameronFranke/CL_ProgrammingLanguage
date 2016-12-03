@@ -1,0 +1,17 @@
+int x := 1
+int y := 1
+int z := 1
+
+char first := "A"
+char second := "B"
+char third := "C"
+char newline := "\n"
+
+while (x == y)
+{
+	print(first)
+	print(second)
+	x := 2
+}
+print(third)
+print(newline)

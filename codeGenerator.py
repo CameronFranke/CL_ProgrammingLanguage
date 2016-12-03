@@ -108,6 +108,9 @@ class codeGenerator():
 			if parseTree["type"] == "condition_statement":
 				self.condition_statement_handler(parseTree["value"])
 			
+			if parseTree["type"] == "loop_statement":
+				self.loop_statement_handler(parseTree["value"])
+
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
@@ -116,18 +119,32 @@ class codeGenerator():
 		# return on unhandled object
 		return 	
 	
+	def loop_statement_handler(self, tree):
+		while (["\n"] in tree): tree.remove(["\n"])
+                while ([None] in tree): tree.remove([None])
+
+		if tree[0] == "while": 	# sanity check
+			
+			self.expression_handler(tree[1]["value"]["value"])
+			my_block_prefix = self.genBlockId()
+			self.xStart.append("\tmov qword r11, [exprResolutionBuffer]\n")
+                        self.xStart.append("\tcmp qword r11, 1\n")
+                        self.xStart.append("\tjne _" + my_block_prefix + "_block_footer\n")                     
+                        self.traverseParseTree(tree[2]) # parse block 
+			self.xStart.insert(-1, "\tjmp _" + my_block_prefix + "_block_header\n")
+	
+
 	def condition_statement_handler(self, tree):
 		while (["\n"] in tree): tree.remove(["\n"])
 		while ([None] in tree): tree.remove([None])
 		
-		for x in tree: print "\t", x ############### print 
 		if tree[0] == "if" and len(tree) == 3:	#sanity check, tree: [if, expression, block]
 			self.expression_handler(tree[1]["value"]["value"])
-			my_block_header = self.genBlockId()
+			my_block_prefix = self.genBlockId()
 			self.xStart.append("\tmov qword r11, [exprResolutionBuffer]\n")
 			self.xStart.append("\tcmp qword r11, 1\n")
-			self.xStart.append("\tjne _" + my_block_header + "_block_footer\n")			
-			self.traverseParseTree(tree[2])
+			self.xStart.append("\tjne _" + my_block_prefix + "_block_footer\n")			
+			self.traverseParseTree(tree[2])	#parse block 
 				
 				
 	def declare_type(self, parseTree):

@@ -23,11 +23,11 @@ function_call = W var_name W "(" W [ value W { W "," W value}] W ")" W "\n";
 
 
 condition_statement = W "if" W value NW block NW;
-loop_statement = "do" block "while" block;
+loop_statement = W "while" W value NW block NW;
 control_statement = condition_statement | loop_statement;
 
 block = "{" NW {function_call | type_declaration | assignment | control_statement} NW "}" NW;
-program = "@@@" {"\n"} {function_definition | type_declaration | expression | assignment | function_call | condition_statement | block} {"\n"} "@@@";
+program = "@@@" {"\n"} {function_definition | type_declaration | expression | assignment | function_call | control_statement | block} {"\n"} "@@@";
 
 comment = "#" {/./} /$/;
 

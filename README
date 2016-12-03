@@ -33,4 +33,16 @@ To convert it to an executable we will link with with the GNU linker:
 	infile = .o from nasm
 	program name = name of the executable 
 
-Run executable with "./<program name>"   
+Run executable with "./<program name>" 
+
+
+##############################################
+	Current Functionality
+Data types: 
+	Char 
+	Int 
+	Array (single dimension)
+
+Control:
+	if statements ( only works with expression as condition )
+	while loop ( only works with expessions as condition )
