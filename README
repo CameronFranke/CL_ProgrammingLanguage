@@ -46,3 +46,5 @@ Data types:
 Control:
 	if statements ( only works with expression as condition )
 	while loop ( only works with expessions as condition )
+
+*mathmatics is currently all unsigned 

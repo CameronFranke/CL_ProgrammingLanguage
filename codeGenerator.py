@@ -311,13 +311,20 @@ class codeGenerator():
 					self.load_function_from_lib("cl_arithmetic_op")
 					self.loadedFunctions.append("cl_arithmetic_op")
 
-				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
-				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
+				self.xStart.append("\txor r11, r11\n")
+				self.xStart.append("\txor r12, r12\n")
+
+				self.xStart.append("\tmov qword r11, [" + operand_1_Address + "];mov op1 to reg\n")
+				self.xStart.append("\tmov qword r12, [" + operand_2_Address + "];mov op2 to reg\n")
 				
 				if operator == "+":
 					self.xStart.append("\tcall _cl_addition\n")
-	
-		
+				if operator == "-":
+					self.xStart.append("\tcall _cl_subtraction\n")
+				if operator == "*":
+					self.xStart.append("\tcall _cl_multiplication\n")
+				if operator == "/":
+					self.xStart.append("\tcall _cl_division\n")
 
 			else:
 				print "Expression operand type mismatch, return false or error?..."
@@ -405,8 +412,6 @@ class codeGenerator():
 				self.xStart.append("\tmov r11, [exprResolutionBuffer]\n")
 				self.xStart.append("\tmov qword [" + myTargetAddress + "], r11\n")
 
-
-
 		return 
 	
 
@@ -439,19 +444,13 @@ class codeGenerator():
 			if len(self.xData) > 1:
 				for x in self.xData:
 					s.write(str(x))	
-
 			if len(self.xBss) > 1:
 				for x in self.xBss:
 					s.write(str(x))
-
 			for x in self.xText:
                             	s.write(str(x))	
-
-
 			for x in self.xStart:
 				s.write(str(x))
-			
-
 			for section in self.functionCode:
 				s.write(section)
 

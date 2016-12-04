@@ -1,0 +1,17 @@
+int x := 5
+int y := 5
+int z := 10
+int k := 0
+int temp
+int test
+char newline := "\n"
+
+
+print(z)
+print(newline)
+test := (z / x)
+print(test)
+print(newline)
+print(z)
+print(newline)
+

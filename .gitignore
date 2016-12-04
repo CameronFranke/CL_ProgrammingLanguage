@@ -1,4 +1,4 @@
 *.pyc
 ast.json
 *.o
-x86_tests/*
+x86_tests/clTest*
