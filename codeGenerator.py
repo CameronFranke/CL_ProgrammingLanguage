@@ -41,7 +41,7 @@ class codeGenerator():
 		self.blockCount = 1
 		
 		self.variables = {} # varName: x, info: {scope, value?, type}
-
+		self.xBss.append("\texprResolutionBuffer:   resq 1\n")
 
 	def preprocessing(self):
                 temp = []
@@ -92,7 +92,6 @@ class codeGenerator():
 			if parseTree["type"] == "block":
 				self.blockId.append(self.genBlockId())
 				self.blockCount+=1
-				print "ping", self.blockId
 				self.xStart.append("_" + self.blockId[-1] + "_block_header:\n")
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
@@ -124,15 +123,19 @@ class codeGenerator():
                 while ([None] in tree): tree.remove([None])
 
 		if tree[0] == "while": 	# sanity check
-			
-			self.expression_handler(tree[1]["value"]["value"])
 			my_block_prefix = self.genBlockId()
+			my_loop_prefix = self.genBlockId()
+			self.xStart.append("_" + my_loop_prefix + "_loop_header:\n")			
+				
+
+			self.expression_handler(tree[1]["value"]["value"])
+
 			self.xStart.append("\tmov qword r11, [exprResolutionBuffer]\n")
                         self.xStart.append("\tcmp qword r11, 1\n")
                         self.xStart.append("\tjne _" + my_block_prefix + "_block_footer\n")                     
                         self.traverseParseTree(tree[2]) # parse block 
-			self.xStart.insert(-1, "\tjmp _" + my_block_prefix + "_block_header\n")
-	
+			self.xStart.insert(-1, "\tjmp _" + my_loop_prefix +"_loop_header\n")
+			self.blockCount += 1	
 
 	def condition_statement_handler(self, tree):
 		while (["\n"] in tree): tree.remove(["\n"])
@@ -303,7 +306,18 @@ class codeGenerator():
 					self.xStart.append("\tcall _cl_is_not_equal\n")
 
 			elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
-                                print "Caught arithmetic operator"
+                                print "\n ==== Caught arithmetic operator ====\n"
+				if "cl_arithmetic_op" not in self.loadedFunctions:
+					self.load_function_from_lib("cl_arithmetic_op")
+					self.loadedFunctions.append("cl_arithmetic_op")
+
+				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
+				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
+				
+				if operator == "+":
+					self.xStart.append("\tcall _cl_addition\n")
+	
+		
 
 			else:
 				print "Expression operand type mismatch, return false or error?..."
@@ -492,7 +506,7 @@ class codeGenerator():
 			self.functionCode.extend(primaryCode)
 
 		except Exception as e:
-			print(" === ERROR READING LIBRARY FINCTION ===")
+			print(" === ERROR READING LIBRARY FUNCTION ===")
 			print(e)
 			return 
 

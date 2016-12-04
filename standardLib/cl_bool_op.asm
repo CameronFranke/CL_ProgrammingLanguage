@@ -1,5 +1,4 @@
 section .bss
-	exprResolutionBuffer: 	resq 1
 section .text
         global _start
 _start:
