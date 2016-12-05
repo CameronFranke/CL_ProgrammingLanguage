@@ -42,6 +42,7 @@ class codeGenerator():
 		
 		self.variables = {} # varName: x, info: {scope, value?, type}
 		self.xBss.append("\texprResolutionBuffer:   resq 1\n")
+		self.xBss.append("\tindexBuffer:	resq 1\n")
 
 	def preprocessing(self):
                 temp = []
@@ -345,17 +346,55 @@ class codeGenerator():
 		
 		if type(tree) == list:
 			if tree[1] == "[" and tree[3] == "]":
-				name = tree[0]
-				index = int(tree[2]["value"]["value"])
-				if name in self.variables:
-					myType = self.variables[name]["type"]
-					if myType == "char":
-						multiplier = 1
-					elif myType == "int":
-						multiplier = 8 #qword
+
+				print tree
+				if tree[2]["value"]["type"] == "literal":
+					name = tree[0]
+					index = int(tree[2]["value"]["value"])
+					if name in self.variables:
+						myType = self.variables[name]["type"]
+						if myType == "char":
+							multiplier = 1
+						elif myType == "int":
+							multiplier = 8 #qword
 					
-					return (self.blockId[0] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[0] + "_type_" + name + "+1"), myType
-				
+						return (self.blockId[0] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[0] + "_type_" + name + "+1"), myType
+	
+				if tree[2]["value"]["type"] == "var_name":
+
+
+
+
+					print "=== CAUGHT VAR AS INDEX==="
+					print tree[2]["value"]["value"]
+					index_address, index_type_address, index_type = self.name_resolver(tree[2]["value"]["value"])
+					print index_address, index_type_address, index_type
+					
+					var_name = tree[0]
+
+					my_type = ""
+					if var_name in self.variables:
+						my_type = self.variables[var_name]["type"]
+						if my_type == "char":
+							multiplier = 1
+						elif my_type == "int":
+							multiplier = 8 
+
+					my_type_address = self.blockId[0] + "_type_" + var_name + "+1"
+					my_base_address = self.blockId[0] + "_val_" + var_name
+
+					
+					self.xStart.append("\tmov dword edi, [" + index_address + "]\n")
+					self.xStart.append("\tmov r13, [" + my_base_address + " + edi *" + str(multiplier)  + "]\n")
+					self.xStart.append("\tmov [indexBuffer], r13\n")
+					
+
+
+	
+
+					return "indexBuffer", my_type_address, my_type 
+					print("=====================")
+
 				else:
 					print("Error in name resolution finction: variable not in self.variables")
 			else: 

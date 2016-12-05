@@ -1,17 +1,26 @@
-int x := 5
-int y := 5
-int z := 10
-int k := 0
+int x := 1
+int y := 2
+int z := 5
+int k := 10
 int temp
-int test
 char newline := "\n"
 
-
-print(z)
-print(newline)
-test := (z / x)
-print(test)
-print(newline)
-print(z)
+temp := (k + x)
+print(temp)
 print(newline)
 
+temp := (k - x)
+print(temp)
+print(newline)
+
+temp := (k * z)
+print(temp)
+print(newline)
+
+temp := (k / z)
+print(temp)
+print(newline)
+
+temp := (z + y)
+print(temp)
+print(newline)

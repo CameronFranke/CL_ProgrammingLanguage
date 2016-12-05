@@ -1,0 +1,13 @@
+int n[3] := [11,12,13]
+char name[3] := ["c", "a", "m"]
+char newline := "\n"
+int x := 1
+
+print(x)
+print(newline)
+print(n[x])
+print(name[x])
+
+
+
+print(newline)
