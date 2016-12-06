@@ -1,0 +1,13 @@
+char x := "X"
+int y := 23
+int z := 41
+char n := "\n"
+
+def int printSucc(int myNum)
+{
+	int z := 1
+	myNum := (myNum + z)
+	print(myNum)	
+}
+printSucc(z)
+print(n)

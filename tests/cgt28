@@ -1,0 +1,10 @@
+char x := "X"
+int y := 1
+char n := "\n"
+
+def int printCam()
+{
+	print(x)
+	print(n)
+}
+printCam()

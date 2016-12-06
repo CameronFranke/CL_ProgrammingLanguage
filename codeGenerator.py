@@ -27,6 +27,7 @@ class codeGenerator():
 		##	Be careful when reading/copying sections from stdLib because the order of the labels may be 
 		## 	important (within each function's source template). Therefore it should always be assumed that it is. 
 
+		self.definedFunctions = {} # name -> [return type, args [{type, var_name}]]
 
 		self.xSourceFile = "x86_tests/clTest.asm"
 		self.xData = ["section .data\n"]
@@ -90,9 +91,11 @@ class codeGenerator():
 				self.declare_type(parseTree)
 			
 			if parseTree["type"] == "block":
-				self.blockId.append(self.genBlockId()) # push block identifier onto stack 
-				self.variables[self.blockId[-1]] = {}  # grab last identifier and carve out a place for this blocks vars 
-				self.blockCount+=1
+				newBlockId = self.genBlockId()
+				if newBlockId not in self.blockId:
+					self.blockId.append(self.genBlockId()) # push block identifier onto stack  
+					self.variables[self.blockId[-1]] = {}  # grab last identifier and carve out a place for this blocks vars 
+					self.blockCount+=1
 				self.xStart.append("_" + self.blockId[-1] + "_block_header:\n")
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
@@ -107,36 +110,31 @@ class codeGenerator():
 			
 			if parseTree["type"] == "condition_statement":
 				self.condition_statement_handler(parseTree["value"])
-			
+
 			if parseTree["type"] == "loop_statement":
 				self.loop_statement_handler(parseTree["value"])
+			
+			if parseTree["type"] == "function_definition":
+				self.define_function(parseTree["value"])			
 
 
 		elif type(parseTree) == grako.contexts.Closure:
 			for x in parseTree:
 				self.traverseParseTree(x)		
-	
+
 		# return on unhandled object
 		return 	
 	
 	def scope_resolver(self, var_name):
-		print("===== Scope Resolution ====")##############################################################################
 		myBlock = self.blockId[-1]
-		print "\tmy block: ", myBlock
 		blockStack = list(self.blockId)
-		blockStack.reverse()
-		print blockStack
-		
-		for bId in blockStack:						# self.variables everwhere/
+		blockStack.reverse()	
+		for bId in blockStack:
 			if var_name in self.variables[bId]:
-				print("found variable: " + var_name + " in: " + bId)
-				print("==== Scope Resolution end ====\n\n")###################################### 
 				return bId
-
 		print("ERROR: " + var_name + " out of scope")
-		for x in self.variables: print x
+		for x in self.variables: print self.variables[x]
 		quit()						
-
 
 
 	def loop_statement_handler(self, tree):
@@ -255,7 +253,7 @@ class codeGenerator():
 			
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
-			return 
+			quit() 
 
 	def get_array_info(self, tree):
 		if tree[1] == "[" and tree[-1] == "]":
@@ -273,6 +271,7 @@ class codeGenerator():
 				return literals
 			else:
 				print("ERROR: DID NOT FIND BRACES")
+				quit()
 		else:
 			if myType == "int":
 				return tree
@@ -396,11 +395,13 @@ class codeGenerator():
 					return "indexBuffer", my_type_address, my_type 
 				else:
 					print("Error in name resolution finction: variable not in self.variables")
+					quit()
 			else: 
 				print("Error in name resolution function - no brackets found")
+				quit()
 		else:
 			print("Error in name resolution function")		
-
+			quit()
 
 	def assign_value(self, tree):
 		myName = ""
@@ -442,7 +443,8 @@ class codeGenerator():
 
 			else:
 				print("ERROR: invalid type addignment: " + sourceType + " to " + targetType) 
-		
+				quit()
+
 		if mySource["type"] == "expression":
 			self.expression_handler(mySource["value"])
 			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)	
@@ -453,12 +455,60 @@ class codeGenerator():
 		return 
 	
 
+	def define_function(self, tree):
+		####################################################################################################################################
+		while "\n" in tree: tree.remove("\n")
+
+		functionType = tree[1]["value"]
+		funcName = tree[2]["value"]
+		functionLabel = "_func_" + funcName + "_"
+		
+		blockIndex = 5
+		args = [] # name -> type 
+		
+		if len(tree) >= 8:
+			if tree[7] == ")": 
+				blockIndex = 8
+				args.append({"name": tree[5]["value"], "type": tree[4]["value"]})
+				for x in tree[6]:
+					args.append({"name": x[2]["value"], "type": x[1]["value"]})
+
+		func_scope_prefix = self.genBlockId()
+		self.variables[func_scope_prefix] = {}
+		self.blockId.append(func_scope_prefix)
+
+		for i, var in enumerate(args):
+			if args[i]["type"] == "char":
+				size = 1
+				typeCode = '''`c`'''
+			if args[i]["type"] == "int": 
+				size = 8
+				typeCode = '''`i`'''			
+
+			myName_val = func_scope_prefix + "_val_" + var["name"] 
+                   	myName_type = func_scope_prefix + "_type_" + var["name"]
+			
+                   	self.xBss.append("\t" + myName_val + ":\t resb " + str(size) + "\n")
+                  	self.xBss.append("\t" + myName_type + ":\t resb 1\n") 
+                  	self.xStart.append("\tmov byte [" + myName_type + "], " + typeCode + "\n")
+			
+			self.variables[func_scope_prefix][var["name"]] = {"type": args[i]["type"], "array": False}
+
+		self.xStart.append("\tjmp " + functionLabel + "end\n")
+		self.xStart.append(functionLabel + ":\n")
+		self.traverseParseTree(tree[blockIndex])
+		self.xStart.append("\tret\n")
+		self.xStart.append(functionLabel + "end:\n")
+
+		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
+
+
 	def call_function(self, tree):
+		##############################################################################################################################################
 		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
 		fName = tree[0]["value"]
-		argName = tree[2]["value"]["value"]
-
-		if fName in self.availableFunctions:
+		if fName in self.availableFunctions: 		# Call a built in function 
+			argName = tree[2]["value"]["value"]
 			if fName not in self.loadedFunctions:
 				self.load_function_from_lib(fName)
 				self.loadedFunctions.append(fName)
@@ -471,9 +521,86 @@ class codeGenerator():
 				myTrigger = myTrigger.split("\n")
 				for line in myTrigger:
 					self.xStart.append(line + "\n")
-		else:
-			raise "ATTEMPING TO CALL A NON EXISTANT FUNCTION"
 
+		elif fName in self.definedFunctions:		# call a user defined function 
+			print(" === CAUGHT USER DEFINED FUNCTION CALL === ")
+			# if no args just call generated name 
+			# if args, move args to generated buffers 
+			#	function label name: "_func_" <funcname> + "_"
+			#	function arg names: "_func_" <funcname> "_arg_" <arg index>
+			#		^ infer types and move appropriate memory size 
+			#		^ baseline assumption is that the bufferes will be declared and written 
+			#		  to the bss section 
+			#
+			#	self.defined functions is a dict with the keys being function names
+			#	each name maps to a list. The first element in that list is the function 
+			# 	return type, the second is a list of arguments, the third is the scope prefix 		
+
+			print(self.definedFunctions[fName])
+
+			tree.remove("\n")	
+			for x in tree: print "\t", repr(x)
+			
+			argParameters = self.definedFunctions[fName][1]
+			providedArgs = self.unpack_call_args(tree)
+			funcName = tree[0]["value"]	
+			func_scope_prefix = self.definedFunctions[fName][2]
+	
+			for i, arg in enumerate(argParameters): 
+				# iterate through args and 
+				# move respective buffers
+				argName = providedArgs[i]["name"]
+				argType = providedArgs[i]["type"]
+				parameterName = arg["name"]
+				parameterType = arg["type"]				
+				print argName, argType
+				print parameterName, parameterType
+				if argType == parameterType:
+					# mov arg to paramter var
+					# 	arg to reg
+					#	reg to parameter 
+					
+					name_val, name_type, _ = self.name_resolver(argName)
+					parameterAddress = func_scope_prefix + "_val_" + parameterName
+
+					self.xStart.append("\tmov r9, [" + name_val + "]\n")
+                                        self.xStart.append("\tmov [" + parameterAddress + "], r9\n")
+
+
+				else: 
+					print("ERROR: type argument/parameter type mismatch")
+					quit()
+
+
+			self.xStart.append("\tcall _func_" + funcName + "_\n")
+			
+		##############################################################################################################################################
+		else:
+			print("ERROR: Function " + fname + " not defined")
+			quit()	
+
+	def unpack_call_args(self, tree):
+		# return a dict of vars; name -> type 
+		if tree[2] == ")": # no args  
+			return []
+		if tree[3] == ")": # 1 arg 
+			name = tree[2]["value"]["value"]
+			scope_prefix = self.scope_resolver(name)
+			myType = self.variables[scope_prefix][name]["type"]
+			return [{"name": name, "type": myType}]
+		if tree[4] == ")":
+			args = []
+			name = tree[2]["value"]["value"]
+                        scope_prefix = self.scope_resolver(name)
+                        myType = self.variables[scope_prefix][name]["type"]
+			args.append({"name": name, "type": myType})                        
+			for x in tree[3]:
+				name = x[1]["value"]["value"]
+                        	scope_prefix = self.scope_resolver(name)
+                        	myType = self.variables[scope_prefix][name]["type"]
+                        	args.append({"name": name, "type": myType})
+			return args
+			
 	def write_x86_source(self):
 		with open(self.xSourceFile, "w+") as s:
 			if len(self.xData) > 1:
@@ -542,14 +669,10 @@ class codeGenerator():
 		except Exception as e:
 			print(" === ERROR READING LIBRARY FUNCTION ===")
 			print(e)
-			return 
-
-		# Need to strip empty lines at the end of this function 
+			quit()
 
 	def assemble(self, outfile):
-		##
-		##	Send commands to command line to assemble and link the generated .asm file 
-		##		
+		##	Send commands to command line to assemble and link the generated .asm file 		
 		p = pexpect.spawn("bash")
 		p.expect(":~") ## expect most recent prompt 
 		p.sendline("cd x86_tests")
