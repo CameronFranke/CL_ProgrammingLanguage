@@ -1,0 +1,28 @@
+int z := 41
+char n := "\n"
+
+def int printCam()
+{
+	char name[3] := ["C", "A", "M", "\n"]
+	int nameLen := 4
+	int x := 0
+	int inc := 1
+	while(x < nameLen)
+	{
+		print(name[x])
+		x := (x + inc)
+	}
+	print(n)
+}
+
+def int printSucc(int myNum)
+{
+	int z := 1
+	myNum := (myNum + z)
+	print(myNum)	
+}
+printSucc(z)
+print(n)
+print(z)
+print(n)
+printCam()
