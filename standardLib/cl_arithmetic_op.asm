@@ -22,6 +22,4 @@ _cl_division:
         mov rax, r11	
 	div r12
         mov word [exprResolutionBuffer], ax
-	ret
-
-		
+	ret		

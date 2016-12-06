@@ -3,6 +3,7 @@ import json
 import clparser
 import clparsersemantics
 import pexpect
+import sys 
 
 class codeGenerator(): 
 	def __init__(self, fileName):
@@ -40,7 +41,7 @@ class codeGenerator():
 		self.blockId = ["g"]
 		self.blockCount = 1
 		
-		self.variables = {} # varName: x, info: {scope, value?, type}
+		self.variables = {"g":{} } # NEW FORMAT scope: {name: type}                                              #varName: x, info: {scope, value?, type}
 		self.xBss.append("\texprResolutionBuffer:   resq 1\n")
 		self.xBss.append("\tindexBuffer:	resq 1\n")
 
@@ -57,14 +58,12 @@ class codeGenerator():
                                 temp.append(tempStr)
                         else:
 				if line != "" and line != "\n":
-                                	temp.append(line)
-                
+                                	temp.append(line) 
 			processedText = ""
                 for x in temp:
                         processedText += x
-
                 processedText = "@@@" + processedText + "@@@"       # using "@@@" to denote start and end of file makes
-                							# some parseing tasks easier 
+                		              				# some parseing tasks easier 
 		if self.printSourceText: 
 			print("\n================== " + self.sourceFile + " ==================")
 			print repr(processedText) + "\n"
@@ -91,7 +90,8 @@ class codeGenerator():
 				self.declare_type(parseTree)
 			
 			if parseTree["type"] == "block":
-				self.blockId.append(self.genBlockId())
+				self.blockId.append(self.genBlockId()) # push block identifier onto stack 
+				self.variables[self.blockId[-1]] = {}  # grab last identifier and carve out a place for this blocks vars 
 				self.blockCount+=1
 				self.xStart.append("_" + self.blockId[-1] + "_block_header:\n")
 				for item in parseTree["value"]:
@@ -119,6 +119,26 @@ class codeGenerator():
 		# return on unhandled object
 		return 	
 	
+	def scope_resolver(self, var_name):
+		print("===== Scope Resolution ====")##############################################################################
+		myBlock = self.blockId[-1]
+		print "\tmy block: ", myBlock
+		blockStack = list(self.blockId)
+		blockStack.reverse()
+		print blockStack
+		
+		for bId in blockStack:						# self.variables everwhere/
+			if var_name in self.variables[bId]:
+				print("found variable: " + var_name + " in: " + bId)
+				print("==== Scope Resolution end ====\n\n")###################################### 
+				return bId
+
+		print("ERROR: " + var_name + " out of scope")
+		for x in self.variables: print x
+		quit()						
+
+
+
 	def loop_statement_handler(self, tree):
 		while (["\n"] in tree): tree.remove(["\n"])
                 while ([None] in tree): tree.remove([None])
@@ -127,10 +147,7 @@ class codeGenerator():
 			my_block_prefix = self.genBlockId()
 			my_loop_prefix = self.genBlockId()
 			self.xStart.append("_" + my_loop_prefix + "_loop_header:\n")			
-				
-
 			self.expression_handler(tree[1]["value"]["value"])
-
 			self.xStart.append("\tmov qword r11, [exprResolutionBuffer]\n")
                         self.xStart.append("\tcmp qword r11, 1\n")
                         self.xStart.append("\tjne _" + my_block_prefix + "_block_footer\n")                     
@@ -184,15 +201,11 @@ class codeGenerator():
 					myName, size = self.get_array_info(myName)
 					myLiteral = self.clean_literal(myLiteral, myType, array=True)
 
-					myName_val = self.blockId[0] + "_val_" + myName 
-					myName_type = self.blockId[0] + "_type_" + myName
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
 
 					# first byte array specifier 
 					self.xStart.append("\tmov byte [" + myName_type + '], "a"\n')
-
-					myName_type = self.blockId[0] + "_type_" + myName
-					myName_type = self.blockId[0] + "_type_" + myName
-					
 					if myType == "char":    
                                                 self.xStart.append("\tmov byte [" + myName_type + '+1], "c"\n')
                                                 dataSize = 1
@@ -208,12 +221,12 @@ class codeGenerator():
 					for index, element in enumerate(myLiteral):
 						self.xStart.append("\tmov byte [" + myName_val + "+" + str(index*dataSize) + "]," + element + "\n")
 
-					self.variables[myName] = {"type": myType, "scope": "g"}
+					self.variables[self.blockId[-1]][myName] = {"type": myType, "array": False}
 
 			else:
 				if myType == "int":
-					myName_val = self.blockId[0] + "_val_" + myName 
-					myName_type = self.blockId[0] + "_type_" + myName
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
 				
 					self.xBss.append("\t" + myName_val + ":\t resq 1\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1\n")
@@ -225,8 +238,8 @@ class codeGenerator():
 						self.xStart.append("\tmov word [" + myName_val + "], " + myLiteral + "\n")
 			
 				if myType == "char":
-					myName_val = self.blockId[0] + "_val_" + myName 
-					myName_type = self.blockId[0] + "_type_" + myName
+					myName_val = self.blockId[-1] + "_val_" + myName 
+					myName_type = self.blockId[-1] + "_type_" + myName
 
 					self.xBss.append("\t" + myName_val + ":\t resb 1" "\n")
 					self.xBss.append("\t" + myName_type + ":\t resb 1" "\n")
@@ -237,7 +250,8 @@ class codeGenerator():
 						myLiteral = self.clean_literal(myLiteral, myType)
 						self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
 
-				self.variables[myName] = {"type": myType, "scope": "g", "array": True}
+				
+				self.variables[self.blockId[-1]][myName] = {"type": myType, "array": True}
 			
 		else: 
 			print("!!! -- ERROR -- !!! - declare_type")
@@ -290,30 +304,33 @@ class codeGenerator():
 			#	Modifications needed to support nested expressions 
 			#
 
-			if operator == "==" or operator == "!=": # Boolean operators 
+			self.xStart.append("\tmov qword [exprResolutionBuffer], 0\n")
+			boolops = ["==", "!=", ">", "<", "<=", ">="]
+			if operator in boolops: # Boolean operators 
 				if "cl_bool_op" not in self.loadedFunctions:
                                 	self.load_function_from_lib("cl_bool_op")
-					self.loadedFunctions.append("cl_bool_op")			
+					self.loadedFunctions.append("cl_bool_op")		
 
 				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
 				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
 				self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
-
-
 				if operator == "==": 
-					self.xStart.append("\tcall _cl_is_equal\n")
-					
+					self.xStart.append("\tcall _cl_is_equal\n")	
 				elif operator == "!=":
 					self.xStart.append("\tcall _cl_is_not_equal\n")
+				elif operator == ">":
+					self.xStart.append("\tcall _cl_greater_than\n")
+				elif operator == "<":                           
+                                        self.xStart.append("\tcall _cl_less_than\n")
+				elif operator == ">=":      
+                                        self.xStart.append("\tcall _cl_greater_than_or_equal\n")
+				elif operator == "<=":      
+                                        self.xStart.append("\tcall _cl_less_than_or_equal\n")					
 
 			elif operator == "+" or operator == "-" or operator == "*" or operator == "/": # Arithmetic operators 
-                                print "\n ==== Caught arithmetic operator ====\n"
 				if "cl_arithmetic_op" not in self.loadedFunctions:
 					self.load_function_from_lib("cl_arithmetic_op")
 					self.loadedFunctions.append("cl_arithmetic_op")
-
-				self.xStart.append("\txor r11, r11\n")
-				self.xStart.append("\txor r12, r12\n")
 
 				self.xStart.append("\tmov qword r11, [" + operand_1_Address + "];mov op1 to reg\n")
 				self.xStart.append("\tmov qword r12, [" + operand_2_Address + "];mov op2 to reg\n")
@@ -328,73 +345,55 @@ class codeGenerator():
 					self.xStart.append("\tcall _cl_division\n")
 
 			else:
-				print "Expression operand type mismatch, return false or error?..."
-
+				#print "Expression operand type mismatch, return false or error?..."
+				#print "\t", tree[2]["value"]
+				pass
 
 	def name_resolver(self, tree):
 		# take in a var_name and return the proper constructed variable name + offset for 
 		# the type and the value
-
-		#print("NAME RESOLVER")
-		#print tree
-		#print type(tree)
-		
+	
 		if type(tree) == unicode:
-			name_val = self.blockId[0] + "_val_" + tree
-			name_type = self.blockId[0] + "_type_" + tree
-			return name_val, name_type, self.variables[tree]["type"]
+			scope_prefix = self.scope_resolver(tree)
+			name_val = scope_prefix + "_val_" + tree
+			name_type = scope_prefix + "_type_" + tree
+			return name_val, name_type, self.variables[scope_prefix][tree]["type"]
 		
 		if type(tree) == list:
+			
 			if tree[1] == "[" and tree[3] == "]":
-
-				print tree
 				if tree[2]["value"]["type"] == "literal":
 					name = tree[0]
+					scope_prefix = self.scope_resolver(name)
 					index = int(tree[2]["value"]["value"])
-					if name in self.variables:
-						myType = self.variables[name]["type"]
+					if name in self.variables[scope_prefix]:               	 
+						myType = self.variables[scope_prefix][name]["type"]
 						if myType == "char":
 							multiplier = 1
 						elif myType == "int":
 							multiplier = 8 #qword
-					
-						return (self.blockId[0] + "_val_" + name + "+" + str(index*multiplier)), (self.blockId[0] + "_type_" + name + "+1"), myType
+						return (scope_prefix + "_val_" + name + "+" + str(index*multiplier)), (scope_prefix + "_type_" + name + "+1"), myType
 	
 				if tree[2]["value"]["type"] == "var_name":
-
-
-
-
-					print "=== CAUGHT VAR AS INDEX==="
-					print tree[2]["value"]["value"]
 					index_address, index_type_address, index_type = self.name_resolver(tree[2]["value"]["value"])
-					print index_address, index_type_address, index_type
-					
 					var_name = tree[0]
-
 					my_type = ""
-					if var_name in self.variables:
-						my_type = self.variables[var_name]["type"]
+					scope_prefix = self.scope_resolver(var_name)
+					if var_name in self.variables[scope_prefix]:
+						my_type = self.variables[scope_prefix][var_name]["type"]
 						if my_type == "char":
 							multiplier = 1
 						elif my_type == "int":
 							multiplier = 8 
-
-					my_type_address = self.blockId[0] + "_type_" + var_name + "+1"
-					my_base_address = self.blockId[0] + "_val_" + var_name
-
+					
+					my_type_address = scope_prefix + "_type_" + var_name + "+1"
+					my_base_address = scope_prefix + "_val_" + var_name
 					
 					self.xStart.append("\tmov dword edi, [" + index_address + "]\n")
 					self.xStart.append("\tmov r13, [" + my_base_address + " + edi *" + str(multiplier)  + "]\n")
 					self.xStart.append("\tmov [indexBuffer], r13\n")
 					
-
-
-	
-
 					return "indexBuffer", my_type_address, my_type 
-					print("=====================")
-
 				else:
 					print("Error in name resolution finction: variable not in self.variables")
 			else: 
@@ -465,8 +464,6 @@ class codeGenerator():
 				self.loadedFunctions.append(fName)
 
 			valName, typeName,_ = self.name_resolver(argName)
-			#print "\t", valName, "\t", typeName 
-
 			if fName in self.loadedFunctions:
 				myTrigger = str(self.functionTriggers[fName])
 				myTrigger = myTrigger.replace("<INSERT_VALUE>", valName)
@@ -474,7 +471,6 @@ class codeGenerator():
 				myTrigger = myTrigger.split("\n")
 				for line in myTrigger:
 					self.xStart.append(line + "\n")
-
 		else:
 			raise "ATTEMPING TO CALL A NON EXISTANT FUNCTION"
 
@@ -551,7 +547,9 @@ class codeGenerator():
 		# Need to strip empty lines at the end of this function 
 
 	def assemble(self, outfile):
-		#self.xSourceFile 
+		##
+		##	Send commands to command line to assemble and link the generated .asm file 
+		##		
 		p = pexpect.spawn("bash")
 		p.expect(":~") ## expect most recent prompt 
 		p.sendline("cd x86_tests")

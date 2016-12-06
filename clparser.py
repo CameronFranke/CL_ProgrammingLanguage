@@ -116,13 +116,13 @@ class UnknownParser(Parser):
             with self._option():
                 self._token('!=')
             with self._option():
-                self._token('>')
-            with self._option():
-                self._token('<')
-            with self._option():
                 self._token('>=')
             with self._option():
                 self._token('<=')
+            with self._option():
+                self._token('>')
+            with self._option():
+                self._token('<')
             self._error('expecting one of: != * + - / := < <= == > >=')
 
     @graken()

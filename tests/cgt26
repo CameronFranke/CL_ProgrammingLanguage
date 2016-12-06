@@ -1,0 +1,45 @@
+char name[7] := ["c", "a", "m", "e", "r", "o", "n"]
+int x := 1
+int y := 10
+int z := 100
+int k := 1
+int r := 10
+
+char n := "\n"
+if(x < k)
+{
+	print(name[0])
+}
+
+if(z > r)
+{
+	print(name[1])
+}
+
+if(x <= k)
+{
+	print(name[2])
+}
+
+if(x >= k)
+{
+        print(name[3])
+}
+
+if(z >= r)
+{
+        print(name[4])
+}
+
+if(r >= z)
+{
+        print(name[5])
+}
+
+print(n)
+
+
+
+
+
+

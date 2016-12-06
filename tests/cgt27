@@ -1,0 +1,17 @@
+int a := 1
+int b := 1
+char x:= "C"
+char n := "\n"
+if (a == b)
+{
+	print(x)
+	print(n)
+	if (b == a)
+	{
+		char x := "A"
+		print(x)
+		print(n)
+	}
+}
+print(x)
+print(n)
