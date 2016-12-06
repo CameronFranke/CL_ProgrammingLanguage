@@ -1,5 +1,3 @@
-char x := "X"
-int y := 23
 int z := 41
 char n := "\n"
 
@@ -10,4 +8,6 @@ def int printSucc(int myNum)
 	print(myNum)	
 }
 printSucc(z)
+print(n)
+print(z)
 print(n)

@@ -476,6 +476,7 @@ class codeGenerator():
 		func_scope_prefix = self.genBlockId()
 		self.variables[func_scope_prefix] = {}
 		self.blockId.append(func_scope_prefix)
+		self.blockCount += 1
 
 		for i, var in enumerate(args):
 			if args[i]["type"] == "char":
