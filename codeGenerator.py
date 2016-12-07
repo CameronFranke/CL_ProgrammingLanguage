@@ -416,21 +416,11 @@ class codeGenerator():
 				if x["type"] == "function_call": mySource = tree
 
 		if type(mySource) == list:
-			print "CAUGHT ASSIGNMNET USING FUNCTION RETURN VALUE"
-			# recures on function call 
-			# move function return buffer to variable 
 			target = mySource[0]
 			sourceFunction = mySource[2]
-			print "target: ", target
-			print "function: ", sourceFunction
-			
-			self.call_function(sourceFunction["value"]) #######################################################################################
-			
+			self.call_function(sourceFunction["value"])
 			return_buffer_address = "func_" + sourceFunction["value"][0]["value"] + "_ret_val" # type check!
-			print return_buffer_address
-				
 			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(target["value"])
-			print myTargetAddress
 			
 			if targetType == "int":
 				self.xStart.append("mov r9, [" + return_buffer_address + "]\n")
@@ -438,8 +428,6 @@ class codeGenerator():
 			if targetType == "char":
 				self.xStart.append("mov r9b, [" + return_buffer_address + "]\n")
 				self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
-		
-
 		else:
 			if mySource["type"] == "literal": ## check type, clean, generate code 
 				myLiteral = mySource["value"]
@@ -484,7 +472,6 @@ class codeGenerator():
 	
 
 	def define_function(self, tree):
-		####################################################################################################################################
 		while "\n" in tree: tree.remove("\n")
 
 		functionType = tree[1]["value"]
@@ -496,6 +483,7 @@ class codeGenerator():
 		args = []  
 		
 		# function return buffer should exist in the host scope, so use current scope prefix 
+		# This will need to be incorperated to meaningfully use nested functions 
 		host_scope_prefix = self.blockId[-1] 
 
 		# "_func_" <funcname> + "_ret_" + ( val/type ) 
@@ -524,7 +512,6 @@ class codeGenerator():
 		func_scope_prefix = self.genBlockId()
 		self.variables[func_scope_prefix] = {}
 		self.blockId.append(func_scope_prefix)
-		self.blockCount += 1
 
 		for i, var in enumerate(args):
 			if args[i]["type"] == "char":
@@ -551,17 +538,13 @@ class codeGenerator():
 
 		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
 		self.currentFunction.pop()
+		self.blockCount += 1
 
 	def call_function(self, tree):
-		##############################################################################################################################################
-		
 		fName = tree[0]["value"]
 		if fName in self.availableFunctions: 		# Call a built in function 
 			argName = tree[2]["value"]["value"]
 			if fName == "return":
-				# move var to reg 
-				# move reg to return buffer 
-				# should probably type check here 
 				valName, typeName,_ = self.name_resolver(argName)
 				return_buffer_address = "func_" + self.currentFunction[-1] + "_ret_val"
 				self.xStart.append("\tmov r9, [" + valName + "]\n")
@@ -582,7 +565,6 @@ class codeGenerator():
 						self.xStart.append(line + "\n")
 
 		elif fName in self.definedFunctions:		# call a user defined function 
-			print(" === CAUGHT USER DEFINED FUNCTION CALL === " + fName)
 			# if no args just call generated name 
 			# if args, move args to generated buffers 
 			#	function label name: "_func_" <funcname> + "_"
@@ -630,8 +612,6 @@ class codeGenerator():
 
 
 			self.xStart.append("\tcall _func_" + funcName + "_\n")
-			
-		##############################################################################################################################################
 		else:
 			print("ERROR: Function " + fname + " not defined")
 			quit()	
