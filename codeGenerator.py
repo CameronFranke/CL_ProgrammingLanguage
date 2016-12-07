@@ -98,6 +98,8 @@ class codeGenerator():
 					self.blockId.append(self.genBlockId()) # push block identifier onto stack  
 					self.variables[self.blockId[-1]] = {}  # grab last identifier and carve out a place for this blocks vars 
 					self.blockCount+=1
+				else: 
+					self.blockCount += 1
 				self.xStart.append("_" + self.blockId[-1] + "_block_header:\n")
 				for item in parseTree["value"]:
 					self.traverseParseTree(item)
@@ -533,14 +535,12 @@ class codeGenerator():
 		self.xStart.append("\tjmp " + functionLabel + "end\n")
 		self.xStart.append(functionLabel + ":\n")
 
-		self.blockCount += 1
 		self.traverseParseTree(tree[blockIndex])
 		self.xStart.append("\tret\n")
 		self.xStart.append(functionLabel + "end:\n")
 
 		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
 		self.currentFunction.pop()
-		#self.blockCount += 1
 
 	def call_function(self, tree):
 		fName = tree[0]["value"]

@@ -1,0 +1,31 @@
+alpha = [a-zA-Z]
+alphanumeric = [a-zA-Z0-9]
+numeric = [0-9]+
+word = [a-zA-z][a-zA-Z0-9]
+operator = "+" | "-" | "*" | "/" | ":=" | "==" | "!=" | ">=" | "<=" | ">" | "<"
+ascii = ["?" | "!" | "." | "'" | " " | "\\n" | "$"]
+W = {"\t" | " "}
+NW = { "\n" | W }
+
+var_name = word ["[" value "]"] 
+literal = (numeric ["." numeric]) | ('"' alphanumeric '"') | "True" | "False" | "[" W value { W  "," W  value W } W "]" W | '"' ascii '"'
+type_keyword = "int" | "char" | "bool" | "float"
+
+type_declaration = type_keyword var_name [":=" W value ] "\n"
+
+expression = "(" value operator value ")"
+value = literal | expression | var_name
+assignment = var_name ":=" (function_call | value)
+
+function_definition = "def " type_keyword var_name "("  [ type_keyword var_name {"," type_keyword var_name} ] ")" block
+function_call = var_name "(" [ value {"," W value}] ")"
+
+condition_statement = "if" value block
+loop_statement = "while" value block 
+control_statement = condition_statement | loop_statement
+
+block = "{" {function_call | type_declaration | assignment | control_statement | function_definition} "}";
+program = "@@@" {function_definition | type_declaration | expression | assignment | function_call | control_statement | block} "@@@";
+
+comment = "#" {/./} /$/;
+

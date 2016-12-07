@@ -1,13 +1,14 @@
 int z := 41
 char n := "\n"
 
-def int printSucc(int myNum)
+def int addOne(int myNum)
 {
 	int z := 1
 	myNum := (myNum + z)
 	print(myNum)	
 }
-printSucc(z)
+
+addOne(z)
 print(n)
-print(z)
-print(n)
+
+
