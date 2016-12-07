@@ -19,7 +19,7 @@ class codeGenerator():
 		
 		self.test_types_to_declare = []
 
-		self.availableFunctions = ["print", "cl_bool_op"]
+		self.availableFunctions = ["print", "cl_bool_op", "return"]
 		self.loadedFunctions = []
 		##	When loading in functions from std lib check for availability and for load status.
 		##	The _start section will contain the code the is needed when the funciton is to be called,
@@ -45,6 +45,8 @@ class codeGenerator():
 		self.variables = {"g":{} } # NEW FORMAT scope: {name: type}                                              #varName: x, info: {scope, value?, type}
 		self.xBss.append("\texprResolutionBuffer:   resq 1\n")
 		self.xBss.append("\tindexBuffer:	resq 1\n")
+
+		self.currentFunction = [""] # should only ever have 1 item in it... enless nested functions are a thing
 
 	def preprocessing(self):
                 temp = []
@@ -247,7 +249,6 @@ class codeGenerator():
 					if defined:
 						myLiteral = self.clean_literal(myLiteral, myType)
 						self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")	
-
 				
 				self.variables[self.blockId[-1]][myName] = {"type": myType, "array": True}
 			
@@ -406,53 +407,80 @@ class codeGenerator():
 	def assign_value(self, tree):
 		myName = ""
 		mySource = "" # should be dict obj
+		
+		while [None] in tree: tree.remove([None])	
 		for x in tree:
-			#print("\t" + str(x))
 			if type(x) == dict:
 				if x["type"] == "var_name": myName = x["value"]
 				if x["type"] == "value": mySource = x["value"]
+				if x["type"] == "function_call": mySource = tree
+
+		if type(mySource) == list:
+			print "CAUGHT ASSIGNMNET USING FUNCTION RETURN VALUE"
+			# recures on function call 
+			# move function return buffer to variable 
+			target = mySource[0]
+			sourceFunction = mySource[2]
+			print "target: ", target
+			print "function: ", sourceFunction
+			
+			self.call_function(sourceFunction["value"]) #######################################################################################
+			
+			return_buffer_address = "func_" + sourceFunction["value"][0]["value"] + "_ret_val" # type check!
+			print return_buffer_address
+				
+			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(target["value"])
+			print myTargetAddress
+			
+			if targetType == "int":
+				self.xStart.append("mov r9, [" + return_buffer_address + "]\n")
+				self.xStart.append("mov [" + myTargetAddress + "], r9\n")
+			if targetType == "char":
+				self.xStart.append("mov r9b, [" + return_buffer_address + "]\n")
+				self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
 		
-		if mySource["type"] == "literal": ## check type, clean, generate code 
-			myLiteral = mySource["value"]
-			if type(myLiteral) == list:
-				myType = "char"
-				typeCode = "c"
-			if type(myLiteral) == unicode:
-				myType = "int"
-				typeCode = "i"
-			myLiteral = self.clean_literal(myLiteral, myType)
-			#need to verify type similarity of target and source
+
+		else:
+			if mySource["type"] == "literal": ## check type, clean, generate code 
+				myLiteral = mySource["value"]
+				if type(myLiteral) == list:
+					myType = "char"
+					typeCode = "c"
+				if type(myLiteral) == unicode:
+					myType = "int"
+					typeCode = "i"
+				myLiteral = self.clean_literal(myLiteral, myType)
+				#need to verify type similarity of target and source
 			
-			myName_val,_,_ = self.name_resolver(myName)
-			self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")
+				myName_val,_,_ = self.name_resolver(myName)
+				self.xStart.append("\tmov byte [" + myName_val + "], " + myLiteral + "\n")
 
-		if mySource["type"] == "var_name": 
-			mySourceAddress, sourceTypeAddress, sourceType = self.name_resolver(mySource["value"])
-			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)
+			if mySource["type"] == "var_name": 
+				mySourceAddress, sourceTypeAddress, sourceType = self.name_resolver(mySource["value"])
+				myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)
 			
-			#print "source type: \t", sourceType, targetType
+				#print "source type: \t", sourceType, targetType
 
-			if True: # this is a good place to do some type checking 
-				if sourceType == "int":
-					self.xStart.append("mov r9, [" + mySourceAddress + "]\n")
-					self.xStart.append("mov [" + myTargetAddress + "], r9\n")
+				if True: # this is a good place to do some type checking 
+					if sourceType == "int":
+						self.xStart.append("mov r9, [" + mySourceAddress + "]\n")
+						self.xStart.append("mov [" + myTargetAddress + "], r9\n")
 			
-				if sourceType == "char":
-					self.xStart.append("mov r9b, [" + mySourceAddress + "]\n")
-					self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
+					if sourceType == "char":
+						self.xStart.append("mov r9b, [" + mySourceAddress + "]\n")
+						self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
 
-			else:
-				print("ERROR: invalid type addignment: " + sourceType + " to " + targetType) 
-				quit()
+				else:
+					print("ERROR: invalid type addignment: " + sourceType + " to " + targetType) 
+					quit()
 
-		if mySource["type"] == "expression":
-			self.expression_handler(mySource["value"])
-			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)	
-			if targetType == "int" or targetType == "char":
-				self.xStart.append("\tmov r11, [exprResolutionBuffer]\n")
-				self.xStart.append("\tmov qword [" + myTargetAddress + "], r11\n")
-
-		return 
+			if mySource["type"] == "expression":
+				self.expression_handler(mySource["value"])
+				myTargetAddress, targetTypeAddress, targetType = self.name_resolver(myName)	
+				if targetType == "int" or targetType == "char":
+					self.xStart.append("\tmov r11, [exprResolutionBuffer]\n")
+					self.xStart.append("\tmov qword [" + myTargetAddress + "], r11\n")
+			return 
 	
 
 	def define_function(self, tree):
@@ -463,9 +491,29 @@ class codeGenerator():
 		funcName = tree[2]["value"]
 		functionLabel = "_func_" + funcName + "_"
 		
+		self.currentFunction.append(funcName)
 		blockIndex = 5
-		args = [] # name -> type 
+		args = []  
 		
+		# function return buffer should exist in the host scope, so use current scope prefix 
+		host_scope_prefix = self.blockId[-1] 
+
+		# "_func_" <funcname> + "_ret_" + ( val/type ) 
+		##create return buffer 
+		return_buffer_address = "func_" + funcName + "_ret_"
+		if functionType == "char":
+			retSize = 1
+			retTypeCode = '''`c`'''
+		elif functionType == "int":
+			retSize = 8
+			retTypeCode = '''`i`'''
+
+
+		self.xBss.append("\t" + return_buffer_address + "val :\tresb " + str(retSize) + "\n")
+		self.xBss.append("\t" + return_buffer_address + "type:\tresb 1\n")
+		self.xStart.append("\tmov word [" + return_buffer_address + "type], " + retTypeCode + "\n")
+		##
+
 		if len(tree) >= 8:
 			if tree[7] == ")": 
 				blockIndex = 8
@@ -502,29 +550,39 @@ class codeGenerator():
 		self.xStart.append(functionLabel + "end:\n")
 
 		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
-
+		self.currentFunction.pop()
 
 	def call_function(self, tree):
 		##############################################################################################################################################
-		# will only work with single arg right now, additional infrastructure will be needed to handle multiple args 
+		
 		fName = tree[0]["value"]
 		if fName in self.availableFunctions: 		# Call a built in function 
 			argName = tree[2]["value"]["value"]
-			if fName not in self.loadedFunctions:
-				self.load_function_from_lib(fName)
-				self.loadedFunctions.append(fName)
+			if fName == "return":
+				# move var to reg 
+				# move reg to return buffer 
+				# should probably type check here 
+				valName, typeName,_ = self.name_resolver(argName)
+				return_buffer_address = "func_" + self.currentFunction[-1] + "_ret_val"
+				self.xStart.append("\tmov r9, [" + valName + "]\n")
+				self.xStart.append("\tmov [" + return_buffer_address + "], r9\n")
 
-			valName, typeName,_ = self.name_resolver(argName)
-			if fName in self.loadedFunctions:
-				myTrigger = str(self.functionTriggers[fName])
-				myTrigger = myTrigger.replace("<INSERT_VALUE>", valName)
-				myTrigger = myTrigger.replace("<INSERT_TYPE>", typeName)
-				myTrigger = myTrigger.split("\n")
-				for line in myTrigger:
-					self.xStart.append(line + "\n")
+			else: 
+				if fName not in self.loadedFunctions:
+					self.load_function_from_lib(fName)
+					self.loadedFunctions.append(fName)
+
+				valName, typeName,_ = self.name_resolver(argName)
+				if fName in self.loadedFunctions:
+					myTrigger = str(self.functionTriggers[fName])
+					myTrigger = myTrigger.replace("<INSERT_VALUE>", valName)
+					myTrigger = myTrigger.replace("<INSERT_TYPE>", typeName)
+					myTrigger = myTrigger.split("\n")
+					for line in myTrigger:
+						self.xStart.append(line + "\n")
 
 		elif fName in self.definedFunctions:		# call a user defined function 
-			print(" === CAUGHT USER DEFINED FUNCTION CALL === ")
+			print(" === CAUGHT USER DEFINED FUNCTION CALL === " + fName)
 			# if no args just call generated name 
 			# if args, move args to generated buffers 
 			#	function label name: "_func_" <funcname> + "_"
@@ -537,10 +595,8 @@ class codeGenerator():
 			#	each name maps to a list. The first element in that list is the function 
 			# 	return type, the second is a list of arguments, the third is the scope prefix 		
 
-			print(self.definedFunctions[fName])
-
-			tree.remove("\n")	
-			for x in tree: print "\t", repr(x)
+			if "\n" in tree: tree.remove("\n")	
+			#for x in tree: print "\t", repr(x)
 			
 			argParameters = self.definedFunctions[fName][1]
 			providedArgs = self.unpack_call_args(tree)
@@ -554,8 +610,8 @@ class codeGenerator():
 				argType = providedArgs[i]["type"]
 				parameterName = arg["name"]
 				parameterType = arg["type"]				
-				print argName, argType
-				print parameterName, parameterType
+				#print argName, argType
+				#print parameterName, parameterType
 				if argType == parameterType:
 					# mov arg to paramter var
 					# 	arg to reg

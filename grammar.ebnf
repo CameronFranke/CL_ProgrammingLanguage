@@ -14,20 +14,20 @@ type_keyword = "int" | "char" | "bool" | "float";
 type_declaration = W type_keyword W var_name W [":=" W value ] W "\n";
 
 expression = W "(" W value W operator W value W ")" W;
-value = literal | var_name | expression;
-assignment = W var_name W ":=" W value W "\n";
+value = literal | expression | var_name;
+assignment = W var_name W ":=" W (function_call | value) NW;
 
 
 function_definition = W "def " type_keyword W var_name W "(" W [ type_keyword W var_name W {"," W type_keyword W var_name W} ] W ")" W ["\n"] block;
 
-function_call = W var_name W "(" W [ value W { W "," W value}] W ")" W "\n";
+function_call = W var_name W "(" W [ value W { W "," W value}] W ")" NW;
 
 
 condition_statement = W "if" W value NW block NW;
 loop_statement = W "while" W value NW block NW;
 control_statement = condition_statement | loop_statement;
 
-block = "{" NW {function_call | type_declaration | assignment | control_statement} NW "}" NW;
+block = "{" NW {function_call | type_declaration | assignment | control_statement | function_definition} NW "}" NW;
 program = "@@@" {"\n"} {function_definition | type_declaration | expression | assignment | function_call | control_statement | block} {"\n"} "@@@";
 
 comment = "#" {/./} /$/;

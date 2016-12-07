@@ -263,9 +263,9 @@ class UnknownParser(Parser):
             with self._option():
                 self._literal_()
             with self._option():
-                self._var_name_()
-            with self._option():
                 self._expression_()
+            with self._option():
+                self._var_name_()
             self._error('no available options')
 
     @graken()
@@ -275,9 +275,14 @@ class UnknownParser(Parser):
         self._W_()
         self._token(':=')
         self._W_()
-        self._value_()
-        self._W_()
-        self._token('\n')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._function_call_()
+                with self._option():
+                    self._value_()
+                self._error('no available options')
+        self._NW_()
 
     @graken()
     def _function_definition_(self):
@@ -329,8 +334,7 @@ class UnknownParser(Parser):
             self._closure(block0)
         self._W_()
         self._token(')')
-        self._W_()
-        self._token('\n')
+        self._NW_()
 
     @graken()
     def _condition_statement_(self):
@@ -376,6 +380,8 @@ class UnknownParser(Parser):
                     self._assignment_()
                 with self._option():
                     self._control_statement_()
+                with self._option():
+                    self._function_definition_()
                 self._error('no available options')
         self._closure(block0)
         self._NW_()

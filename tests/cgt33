@@ -1,0 +1,15 @@
+char n := "\n"
+def int doubleNum(int l)
+{
+	int g := 2
+	l := (g * l)
+	print(l)
+	print(n)
+	return(l)
+}
+int x := 3
+print(x)
+print(n)
+x := doubleNum(x)
+print(x)
+print(n)

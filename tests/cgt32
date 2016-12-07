@@ -1,0 +1,22 @@
+char n := "\n"
+def int addNums(int x, int y, int w)
+{
+	int z
+	z := (x + y)
+	z := (z + w)
+	print(z)
+	print(n)
+}
+def int doubleNum(int l)
+{
+	int g := 2
+	l := (g * l)
+	print(l)
+	print(n)
+}
+
+int a := 12
+int b := 11
+int c := 10
+addNums(a, b, c)
+doubleNum(a)
