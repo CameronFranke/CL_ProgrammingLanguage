@@ -130,12 +130,12 @@ class codeGenerator():
 	def scope_resolver(self, var_name):
 		myBlock = self.blockId[-1]
 		blockStack = list(self.blockId)
-		blockStack.reverse()	
+		blockStack.reverse()
 		for bId in blockStack:
 			if var_name in self.variables[bId]:
 				return bId
-		print("ERROR: " + var_name + " out of scope")
-		for x in self.variables: print self.variables[x]
+		print("ERROR: " + var_name + " out of scope. Current block: ", myBlock)
+		for x in self.variables: print x, ":\t", self.variables[x]
 		quit()						
 
 
@@ -532,13 +532,15 @@ class codeGenerator():
 
 		self.xStart.append("\tjmp " + functionLabel + "end\n")
 		self.xStart.append(functionLabel + ":\n")
+
+		self.blockCount += 1
 		self.traverseParseTree(tree[blockIndex])
 		self.xStart.append("\tret\n")
 		self.xStart.append(functionLabel + "end:\n")
 
 		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
 		self.currentFunction.pop()
-		self.blockCount += 1
+		#self.blockCount += 1
 
 	def call_function(self, tree):
 		fName = tree[0]["value"]
