@@ -535,11 +535,12 @@ class codeGenerator():
 		self.xStart.append("\tjmp " + functionLabel + "end\n")
 		self.xStart.append(functionLabel + ":\n")
 
+		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])  # recursion??
 		self.traverseParseTree(tree[blockIndex])
 		self.xStart.append("\tret\n")
 		self.xStart.append(functionLabel + "end:\n")
 
-		self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
+		#self.definedFunctions[str(funcName)] = list([functionType, args, func_scope_prefix])
 		self.currentFunction.pop()
 
 	def call_function(self, tree):

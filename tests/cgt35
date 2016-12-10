@@ -1,0 +1,25 @@
+char n := "\n"
+def int doubleNum(int l)
+{
+        int g := 2
+        l := (g * l)
+        print(l)
+        print(n)
+        int z := 512
+        if (l <= z)
+        {
+                l := doubleNum(l)
+        }
+        if (l > z)
+        {
+                return(l)
+        }
+        return(l)
+}
+int x := 2
+print(x)
+print(n)
+x := doubleNum(x)
+print(x)
+print(n)
+
