@@ -1,7 +1,5 @@
 char name[13] := ["H", "e", "l", "l", "o", " ",  "w", "o", "r", "l", "d", "!", "\n"]
 int x := 0
-while(x < 13)
-{
+while(x < 13){
 	print(name[x])
-	x := (x + 1)
-}
+	x := (x + 1)}

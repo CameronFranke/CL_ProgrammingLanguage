@@ -437,11 +437,11 @@ class codeGenerator():
 			myTargetAddress, targetTypeAddress, targetType = self.name_resolver(target["value"])
 			
 			if targetType == "int":
-				self.xStart.append("mov r9, [" + return_buffer_address + "]\n")
-				self.xStart.append("mov [" + myTargetAddress + "], r9\n")
+				self.xStart.append("\tmov r9, [" + return_buffer_address + "]\n")
+				self.xStart.append("\tmov [" + myTargetAddress + "], r9\n")
 			if targetType == "char":
-				self.xStart.append("mov r9b, [" + return_buffer_address + "]\n")
-				self.xStart.append("mov byte [" + myTargetAddress + "], r9b\n")
+				self.xStart.append("\tmov r9b, [" + return_buffer_address + "]\n")
+				self.xStart.append("\tmov byte [" + myTargetAddress + "], r9b\n")
 		else:
 			if mySource["type"] == "literal": ## check type, clean, generate code 
 				myLiteral = mySource["value"]
