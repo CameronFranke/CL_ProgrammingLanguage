@@ -294,18 +294,34 @@ class codeGenerator():
 		#sanity check 
 		if tree[0] == "(" and tree[-1] == ")":
 			operator = tree[2]["value"]
-		
+			
+			#       Modifications needed to support nested expressions 
 			###   What if these are literals? name resolver need to be able to recognize and handle literals ### 
 			
-			if tree[1]["value"]["type"] == "var_name":
+			if tree[1]["value"]["type"] == "var_name": # operand 1
 				operand_1_Address, operand_1_type_Address, operand_1_type = self.name_resolver(tree[1]["value"]["value"])	
+				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")		
+				self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
 			
-			if tree[3]["value"]["type"] == "var_name":
-				operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
-			#
-			#	Modifications needed to support nested expressions 
-			#
+			elif tree[1]["value"]["type"] == "literal":
+				myType = self.infer_literal_type(tree[1]["value"]["value"])
+				myLit = self.clean_literal(tree[1]["value"]["value"], myType)
+				self.xStart.append("\tmov r11, " + myLit  + ";mov op2 literal to reg\n")
+				if myType == "char":
+					typeCode = '''`c`'''
+				elif myType == "int":
+					typeCode = '''`i`'''
+				self.xStart.append("\tmov byte r13b, " + typeCode + "; mov op1 type to reg\n")
 
+			if tree[3]["value"]["type"] == "var_name": # operand 2
+				operand_2_Address, operand_2_type_Address, operand_2_type = self.name_resolver( tree[3]["value"]["value"])
+				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
+
+			elif tree[3]["value"]["type"] == "literal": 
+				myType = self.infer_literal_type(tree[3]["value"]["value"])
+				myLit = self.clean_literal(tree[3]["value"]["value"], myType)
+				self.xStart.append("\tmov r12, " + myLit  + ";mov op2 literal to reg\n")
+	
 			self.xStart.append("\tmov qword [exprResolutionBuffer], 0\n")
 			boolops = ["==", "!=", ">", "<", "<=", ">="]
 			if operator in boolops: # Boolean operators 
@@ -313,9 +329,6 @@ class codeGenerator():
                                 	self.load_function_from_lib("cl_bool_op")
 					self.loadedFunctions.append("cl_bool_op")		
 
-				self.xStart.append("\tmov r11, [" + operand_1_Address + "];mov op1 to reg\n")
-				self.xStart.append("\tmov r12, [" + operand_2_Address + "];mov op2 to reg\n")
-				self.xStart.append("\tmov byte r13b, [" + operand_1_type_Address + "]; mov op1 type to reg\n")
 				if operator == "==": 
 					self.xStart.append("\tcall _cl_is_equal\n")	
 				elif operator == "!=":
@@ -334,9 +347,6 @@ class codeGenerator():
 					self.load_function_from_lib("cl_arithmetic_op")
 					self.loadedFunctions.append("cl_arithmetic_op")
 
-				self.xStart.append("\tmov qword r11, [" + operand_1_Address + "];mov op1 to reg\n")
-				self.xStart.append("\tmov qword r12, [" + operand_2_Address + "];mov op2 to reg\n")
-				
 				if operator == "+":
 					self.xStart.append("\tcall _cl_addition\n")
 				if operator == "-":
@@ -346,10 +356,12 @@ class codeGenerator():
 				if operator == "/":
 					self.xStart.append("\tcall _cl_division\n")
 
-			else:
-				#print "Expression operand type mismatch, return false or error?..."
-				#print "\t", tree[2]["value"]
-				pass
+	def infer_literal_type(self, tree):
+		if '"' in tree: 
+			return "char"
+		else: 
+			return "int"
+
 
 	def name_resolver(self, tree):
 		# take in a var_name and return the proper constructed variable name + offset for 

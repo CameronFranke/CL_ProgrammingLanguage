@@ -1,0 +1,14 @@
+int a := 5
+int b := 10
+int d
+char letter1 := "X"
+char newline := "\n"
+
+d := (letter1 == "Y")
+print(d)
+print(newline)
+
+d := (a == 5)
+print(d)
+print(newline)
+

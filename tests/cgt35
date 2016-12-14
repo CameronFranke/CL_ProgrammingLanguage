@@ -1,18 +1,12 @@
 char n := "\n"
 def int doubleNum(int l)
 {
-        int g := 2
-        l := (g * l)
+        l := (2 * l)
         print(l)
         print(n)
-        int z := 512
-        if (l <= z)
+        if (l <= 512)
         {
                 l := doubleNum(l)
-        }
-        if (l > z)
-        {
-                return(l)
         }
         return(l)
 }
